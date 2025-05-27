@@ -1,0 +1,430 @@
+<!--
+        DASHBOARD DE ESTADISTICAS EN TIEMPO REAL
+
+        PRESENTO LAS METRICAS MAS IMPORTANTES DEL SISTEMA DE MANERA VISUAL
+        Y COMPRENSIBLE. ESTAS ESTADISTICAS SIRVEN PARA:
+        - MOSTRAR LA VITALIDAD Y ACTIVIDAD DE LA BIBLIOTECA
+        - GENERAR CONFIANZA EN LOS USUARIOS POTENCIALES
+        - PROPORCIONAR TRANSPARENCIA SOBRE LOS RECURSOS DISPONIBLES
+        - CREAR UNA SENSACION DE COMUNIDAD ACTIVA
+
+        CADA ESTADISTICA SE PRESENTA EN UNA TARJETA INDIVIDUAL CON:
+        - ICONO REPRESENTATIVO DE LA METRICA
+        - NUMERO PROMINENTE CON EL VALOR ACTUAL
+        - DESCRIPCION CLARA DE QUE REPRESENTA EL NUMERO
+        - EFECTOS DE HOVER PARA INTERACTIVIDAD
+
+        USO THYMELEAF PARA MOSTRAR VALORES DINAMICOS DESDE EL CONTROLADOR
+        CON VALORES P<!DOCTYPE html>
+<!-- PLANTILLA PRINCIPAL DEL SISTEMA DE BIBLIOTECA DIGITAL
+
+    ESTA ES LA PAGINA DE INICIO QUE MUESTRO A TODOS LOS VISITANTES DEL SISTEMA.
+    DISEÑO UNA EXPERIENCIA VISUAL ATRACTIVA QUE COMBINA INFORMACION ESTADISTICA
+    EN TIEMPO REAL CON ELEMENTOS PROMOCIONALES PARA INCENTIVAR EL USO DE LA BIBLIOTECA.
+
+    LA PLANTILLA IMPLEMENTA UN DISEÑO RESPONSIVO UTILIZANDO BOOTSTRAP 5 Y
+    FONT AWESOME PARA ICONOGRAFIA PROFESIONAL. CREO UNA INTERFAZ MODERNA
+    QUE TRANSMITE CONFIANZA Y FACILIDAD DE USO.
+
+    ESTRUCTURO EL CONTENIDO EN SECCIONES CLARAMENTE DEFINIDAS:
+    - NAVEGACION PRINCIPAL CON ACCESO A TODAS LAS FUNCIONALIDADES
+    - SECCION HERO CON MENSAJE DE BIENVENIDA Y BUSQUEDA PROMINENTE
+    - DASHBOARD DE ESTADISTICAS PARA MOSTRAR ACTIVIDAD DEL SISTEMA
+    - GALERIA DE LIBROS DESTACADOS PARA PROMOCIONAR EL CATALOGO
+    - FOOTER INFORMATIVO CON CREDITOS Y ENLACES ADICIONALES
+
+    @author MARIO FLORES
+    @version 1.0
+    @since 2025-05-26
+-->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- CONFIGURACION BASICA DEL DOCUMENTO HTML -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca Digital - Sistema de Gestión Bibliográfica</title>
+
+    <!-- IMPORTACION DE FRAMEWORKS CSS EXTERNOS -->
+    <!-- UTILIZO BOOTSTRAP 5 PARA EL SISTEMA DE GRID Y COMPONENTES RESPONSIVOS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FONT AWESOME PARA ICONOGRAFIA PROFESIONAL Y CONSISTENTE -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- ESTILOS PERSONALIZADOS PARA LA IDENTIDAD VISUAL DEL SISTEMA -->
+    <style>
+        /* SECCION HERO CON GRADIENTE ATRACTIVO PARA IMPACTO VISUAL */
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4rem 0;
+        }
+
+        /* TARJETAS DE ESTADISTICAS CON EFECTOS DE HOVER MODERNOS */
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        /* ANIMACION DE ELEVACION AL HACER HOVER EN LAS TARJETAS */
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* NUMEROS ESTADISTICOS CON TIPOGRAFIA PROMINENTE */
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        /* TARJETAS DE LIBROS CON ANIMACIONES SUAVES */
+        .book-card {
+            transition: transform 0.3s ease;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* EFECTO DE ELEVACION PARA TARJETAS DE LIBROS */
+        .book-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+<!--
+    BARRA DE NAVEGACION PRINCIPAL DEL SISTEMA
+
+    IMPLEMENTO UNA NAVBAR RESPONSIVE QUE PROPORCIONA ACCESO FACIL A TODAS
+    LAS SECCIONES PRINCIPALES DEL SISTEMA. UTILIZO COLORES OSCUROS PARA
+    CREAR CONTRASTE Y PROFESIONALISMO EN LA INTERFAZ.
+
+    LA NAVEGACION INCLUYE:
+    - LOGO Y MARCA DE LA BIBLIOTECA DIGITAL
+    - ENLACES A SECCIONES PUBLICAS (INICIO, CATALOGO, CONTACTO)
+    - BOTONES DE AUTENTICACION (LOGIN Y REGISTRO)
+    - MENU COLAPSIBLE PARA DISPOSITIVOS MOVILES
+-->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <!-- MARCA DE LA BIBLIOTECA CON ICONO REPRESENTATIVO -->
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-book-reader me-2"></i>
+            Biblioteca Digital
+        </a>
+
+        <!-- BOTON PARA MENU HAMBURGUESA EN DISPOSITIVOS MOVILES -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- CONTENIDO COLAPSIBLE DE LA NAVEGACION -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- ENLACES DE NAVEGACION PRINCIPALES -->
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/catalog">Catálogo</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/contact">Contacto</a>
+                </li>
+            </ul>
+
+            <!-- ENLACES DE AUTENTICACION ALINEADOS A LA DERECHA -->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">
+                        <i class="fas fa-sign-in-alt me-1"></i>
+                        Iniciar Sesión
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/register">
+                        <i class="fas fa-user-plus me-1"></i>
+                        Registrarse
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!--
+    SECCION HERO PRINCIPAL CON MENSAJE DE BIENVENIDA
+
+    ESTA ES LA PRIMERA IMPRESION QUE TIENEN LOS VISITANTES AL ACCEDER
+    AL SISTEMA. DISEÑO UNA SECCION VISUALMENTE IMPACTANTE CON:
+    - FONDO DEGRADADO ATRACTIVO QUE TRANSMITE MODERNIDAD
+    - MENSAJE DE BIENVENIDA CLARO Y MOTIVADOR
+    - BARRA DE BUSQUEDA PROMINENTE PARA FACILITAR LA EXPLORACION
+    - TIPOGRAFIA JERARQUICA PARA GUIAR LA ATENCION DEL USUARIO
+
+    EL OBJETIVO ES CAPTAR INMEDIATAMENTE EL INTERES DEL VISITANTE
+    Y PROPORCIONARLE UNA EXPERIENCIA DE NAVEGACION INTUITIVA.
+-->
+<section class="hero-section">
+    <div class="container text-center">
+        <!-- TITULO PRINCIPAL CON ICONO REPRESENTATIVO -->
+        <h1 class="display-4 fw-bold mb-4">
+            <i class="fas fa-book-open me-3"></i>
+            Bienvenido a la Biblioteca Digital
+        </h1>
+
+        <!-- SUBTITULO DESCRIPTIVO QUE EXPLICA EL PROPOSITO DEL SISTEMA -->
+        <p class="lead mb-4">
+            Descubre, explora y disfruta de nuestra extensa colección de libros digitales
+        </p>
+
+        <!-- BARRA DE BUSQUEDA PROMINENTE PARA FACILITAR LA EXPLORACION -->
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="input-group input-group-lg">
+                    <!-- CAMPO DE BUSQUEDA CON PLACEHOLDER DESCRIPTIVO -->
+                    <input type="text" class="form-control" placeholder="Buscar libros, autores, géneros...">
+                    <!-- BOTON DE BUSQUEDA CON ICONO RECONOCIBLE -->
+                    <button class="btn btn-light" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!--
+    DASHBOARD DE ESTADISTICAS EN TIEMPO REAL
+
+    PRESENTO LAS METRICAS MAS IMPORTANTES DEL SISTEMA DE MANERA VISUAL
+    Y COMPRENSIBLE. ESTAS ESTADISTICAS SIRVEN PARA:
+    - MOSTRAR LA VITALIDAD Y ACTIVIDAD DE LA BIBLIOTECA
+    - GENERAR CONFIANZA EN LOS USUARIOS POTENCIALES
+    - PROPORCIONAR TRANSPARENCIA SOBRE LOS RECURSOS DISPONIBLES
+    - CREAR UNA SENSACION DE COMUNIDAD ACTIVA
+
+    CADA ESTADISTICA SE PRESENTA EN UNA TARJETA INDIVIDUAL CON:
+    - ICONO REPRESENTATIVO DE LA METRICA
+    - NUMERO PROMINENTE CON EL VALOR ACTUAL
+    - DESCRIPCION CLARA DE QUE REPRESENTA EL NUMERO
+    - EFECTOS DE HOVER PARA INTERACTIVIDAD
+
+    USO THYMELEAF PARA MOSTRAR VALORES DINAMICOS DESDE EL CONTROLADOR
+    CON VALORES POR DEFECTO EN CASO DE ERROR O DATOS NO DISPONIBLES.
+-->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <!-- TARJETA DE ESTADISTICA: TOTAL DE LIBROS EN EL CATALOGO -->
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <!-- ICONO DE LIBROS APILADOS PARA REPRESENTAR EL CATALOGO COMPLETO -->
+                    <i class="fas fa-books fa-3x text-primary mb-3"></i>
+                    <!-- NUMERO TOTAL DE LIBROS OBTENIDO DINAMICAMENTE DEL CONTROLADOR -->
+                    <div class="stats-number" th:text="${totalBooks ?: 0}">0</div>
+                    <!-- DESCRIPCION CLARA DE LA METRICA -->
+                    <p class="text-muted mb-0">Libros Totales</p>
+                </div>
+            </div>
+
+            <!-- TARJETA DE ESTADISTICA: LIBROS DISPONIBLES PARA PRESTAMO -->
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <!-- ICONO DE LIBRO ABIERTO REPRESENTANDO DISPONIBILIDAD -->
+                    <i class="fas fa-book fa-3x text-success mb-3"></i>
+                    <!-- NUMERO DE LIBROS CON COPIAS DISPONIBLES -->
+                    <div class="stats-number" th:text="${availableBooks ?: 0}">0</div>
+                    <!-- ETIQUETA DESCRIPTIVA CON COLOR VERDE PARA DISPONIBILIDAD -->
+                    <p class="text-muted mb-0">Disponibles</p>
+                </div>
+            </div>
+
+            <!-- TARJETA DE ESTADISTICA: PRESTAMOS ACTUALMENTE VIGENTES -->
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <!-- ICONO DE MANOS SOSTENIENDO CORAZON PARA REPRESENTAR PRESTAMOS ACTIVOS -->
+                    <i class="fas fa-hand-holding-heart fa-3x text-warning mb-3"></i>
+                    <!-- NUMERO DE PRESTAMOS QUE ESTAN ACTUALMENTE EN CURSO -->
+                    <div class="stats-number" th:text="${activeLoans ?: 0}">0</div>
+                    <!-- DESCRIPCION CON COLOR AMARILLO PARA INDICAR ACTIVIDAD -->
+                    <p class="text-muted mb-0">Préstamos Activos</p>
+                </div>
+            </div>
+
+            <!-- TARJETA DE ESTADISTICA: USUARIOS REGISTRADOS Y ACTIVOS -->
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <!-- ICONO DE USUARIOS PARA REPRESENTAR LA COMUNIDAD -->
+                    <i class="fas fa-users fa-3x text-info mb-3"></i>
+                    <!-- NUMERO TOTAL DE USUARIOS ACTIVOS EN EL SISTEMA -->
+                    <div class="stats-number" th:text="${totalUsers ?: 0}">0</div>
+                    <!-- ETIQUETA CON COLOR AZUL PARA REPRESENTAR COMUNIDAD -->
+                    <p class="text-muted mb-0">Usuarios Activos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!--
+    SECCION DE LIBROS DESTACADOS PARA PROMOCION DEL CATALOGO
+
+    ESTA SECCION SE MUESTRA CONDICIONALMENTE SOLO CUANDO HAY LIBROS
+    MARCADOS COMO DESTACADOS EN EL SISTEMA. SIRVE PARA:
+    - PROMOCIONAR OBRAS ESPECIFICAS DEL CATALOGO
+    - GENERAR INTERES EN LA COLECCION DISPONIBLE
+    - MOSTRAR LA DIVERSIDAD Y CALIDAD DEL CONTENIDO
+    - INCENTIVAR EL REGISTRO Y USO DEL SISTEMA
+
+    CADA LIBRO DESTACADO SE PRESENTA EN UNA TARJETA INDIVIDUAL CON:
+    - TITULO Y AUTOR PROMINENTES
+    - DESCRIPCION RESUMIDA PARA GENERAR INTERES
+    - CATEGORIA DEL LIBRO COMO BADGE VISUAL
+    - BOTON DE ACCION PARA VER MAS DETALLES
+
+    LIMITO LA VISUALIZACION A MAXIMO 6 LIBROS PARA NO SOBRECARGAR
+    LA INTERFAZ Y MANTENGO UN ENLACE AL CATALOGO COMPLETO.
+-->
+<section class="py-5 bg-light" th:if="${featuredBooks != null and !featuredBooks.isEmpty()}">
+    <div class="container">
+        <!-- ENCABEZADO DE LA SECCION CON ICONO DE ESTRELLA -->
+        <h2 class="text-center mb-5">
+            <i class="fas fa-star text-warning me-2"></i>
+            Libros Destacados
+        </h2>
+
+        <!-- GRID RESPONSIVO DE TARJETAS DE LIBROS -->
+        <div class="row g-4">
+            <!--
+                ITERACION THYMELEAF SOBRE LA LISTA DE LIBROS DESTACADOS
+                LIMITO A MAXIMO 6 LIBROS PARA MANTENER UN DISEÑO LIMPIO
+            -->
+            <div class="col-md-4" th:each="book : ${featuredBooks}" th:if="${bookStat.index < 6}">
+                <div class="card book-card h-100">
+                    <div class="card-body">
+                        <!-- TITULO DEL LIBRO COMO ENCABEZADO PRINCIPAL -->
+                        <h5 class="card-title" th:text="${book.title}">Título del Libro</h5>
+
+                        <!-- INFORMACION DEL AUTOR CON ICONO IDENTIFICATIVO -->
+                        <p class="card-text">
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>
+                                <span th:text="${book.author}">Autor</span>
+                            </small>
+                        </p>
+
+                        <!--
+                            DESCRIPCION TRUNCADA DEL LIBRO PARA GENERAR INTERES
+                            MUESTRO SOLO LOS PRIMEROS 100 CARACTERES PARA MANTENER UNIFORMIDAD
+                        -->
+                        <p class="card-text" th:if="${book.description}"
+                           th:text="${#strings.abbreviate(book.description, 100)}">
+                            Descripción del libro...
+                        </p>
+
+                        <!-- FOOTER DE LA TARJETA CON CATEGORIA Y ACCION -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <!-- BADGE CON LA CATEGORIA DEL LIBRO -->
+                            <span class="badge bg-primary" th:text="${book.category.description}">Categoría</span>
+                            <!-- BOTON PARA VER DETALLES COMPLETOS DEL LIBRO -->
+                            <button class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>
+                                Ver Detalles
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ENLACE AL CATALOGO COMPLETO PARA CONTINUAR LA EXPLORACION -->
+        <div class="text-center mt-4">
+            <a href="/catalog" class="btn btn-primary btn-lg">
+                <i class="fas fa-book-open me-2"></i>
+                Ver Catálogo Completo
+            </a>
+        </div>
+    </div>
+</section>
+
+<!--
+    MENSAJE DE ERROR CONDICIONAL PARA MANEJO DE PROBLEMAS
+
+    ESTA SECCION SE MUESTRA UNICAMENTE CUANDO OCURRE ALGUN ERROR
+    AL CARGAR LOS DATOS DEL SISTEMA EN EL CONTROLADOR. PROPORCIONO:
+    - RETROALIMENTACION CLARA AL USUARIO SOBRE PROBLEMAS TECNICOS
+    - MANTENIMIENTO DE LA EXPERIENCIA DE USUARIO INCLUSO CON ERRORES
+    - INFORMACION TRANSPARENTE SOBRE EL ESTADO DEL SISTEMA
+    - ESTILO VISUAL NO INTRUSIVO PERO VISIBLE
+
+    USO UN ALERT DE BOOTSTRAP CON ESTILO WARNING PARA INDICAR
+    QUE HAY UN PROBLEMA PERO EL SISTEMA SIGUE FUNCIONANDO.
+-->
+<div class="container my-4" th:if="${error}">
+    <div class="alert alert-warning" role="alert">
+        <!-- ICONO DE ADVERTENCIA PARA LLAMAR LA ATENCION -->
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <!-- MENSAJE DE ERROR DINAMICO DESDE EL CONTROLADOR -->
+        <span th:text="${error}">Error</span>
+    </div>
+</div>
+
+<!--
+    FOOTER INFORMATIVO DEL SISTEMA
+
+    EL FOOTER PROPORCIONA INFORMACION INSTITUCIONAL Y CREDITOS
+    DEL SISTEMA. INCLUYE:
+    - INFORMACION DE LA MARCA Y DESCRIPCION DEL SISTEMA
+    - CREDITOS DE DESARROLLO Y COPYRIGHT
+    - DISEÑO OSCURO PARA CONTRASTAR CON EL CONTENIDO PRINCIPAL
+    - LAYOUT RESPONSIVO QUE SE ADAPTA A DIFERENTES PANTALLAS
+
+    MANTENGO EL FOOTER SIMPLE PERO PROFESIONAL PARA CERRAR
+    LA EXPERIENCIA DE USUARIO DE MANERA ADECUADA.
+-->
+<footer class="bg-dark text-light py-4 mt-5">
+    <div class="container">
+        <div class="row">
+            <!-- COLUMNA IZQUIERDA CON INFORMACION DE LA MARCA -->
+            <div class="col-md-6">
+                <!-- TITULO CON ICONO REPRESENTATIVO -->
+                <h5>
+                    <i class="fas fa-book-reader me-2"></i>
+                    Biblioteca Digital
+                </h5>
+                <!-- DESCRIPCION BREVE DEL SISTEMA Y TECNOLOGIAS UTILIZADAS -->
+                <p>Sistema de gestión bibliográfica desarrollado con Spring Boot y Thymeleaf.</p>
+            </div>
+
+            <!-- COLUMNA DERECHA CON CREDITOS DE DESARROLLO -->
+            <div class="col-md-6 text-md-end">
+                <p class="mb-0">
+                    <!-- ICONO DE CODIGO PARA REPRESENTAR DESARROLLO -->
+                    <i class="fas fa-code me-1"></i>
+                    Desarrollado por Mario Flores - 2025
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!--
+    SCRIPTS DE JAVASCRIPT PARA FUNCIONALIDAD INTERACTIVA
+
+    CARGO BOOTSTRAP JAVASCRIPT BUNDLE QUE INCLUYE:
+    - COMPONENTES INTERACTIVOS COMO MODALES Y DROPDOWNS
+    - FUNCIONALIDAD DE NAVEGACION RESPONSIVE
+    - ANIMACIONES Y TRANSICIONES SUAVES
+    - COMPATIBILIDAD CON TODOS LOS NAVEGADORES MODERNOS
+
+    UTILIZO LA VERSION BUNDLE QUE INCLUYE POPPER.JS INTEGRADO
+    PARA EVITAR CONFLICTOS DE DEPENDENCIAS.
+-->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

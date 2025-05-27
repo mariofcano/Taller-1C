@@ -311,15 +311,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByGlobalSearch(@Param("searchTerm") String searchTerm);
 
     /**
-     * CUENTA USUARIOS REGISTRADOS HOY
+     * CUENTA USUARIOS REGISTRADOS HOY - VERSION CORREGIDA
      *
      * CALCULO LA CANTIDAD DE USUARIOS QUE SE REGISTRARON EN LA FECHA ACTUAL.
      * METRICA DIARIA IMPORTANTE PARA MONITOREAR EL CRECIMIENTO
      * Y LA ACTIVIDAD DE REGISTRO EN EL SISTEMA.
      *
+     * CORRIJO LA CONSULTA PARA EVITAR PROBLEMAS DE TIPOS DE DATOS
+     * USANDO CAST PARA CONVERTIR CORRECTAMENTE LAS FECHAS.
+     *
      * @return NUMERO DE USUARIOS REGISTRADOS HOY
      */
-    @Query("SELECT COUNT(u) FROM User u WHERE DATE(u.createdAt) = CURRENT_DATE")
+    @Query("SELECT COUNT(u) FROM User u WHERE DATE(u.createdAt) = DATE(CURRENT_TIMESTAMP)")
     long countUsersRegisteredToday();
 
     /**
@@ -345,17 +348,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("SELECT u FROM User u WHERE u.phone IS NOT NULL AND u.phone != ''")
     List<User> findUsersWithPhone();
-
-    /**
-     * ACTUALIZA EL ESTADO ACTIVO DE UN USUARIO
-     *
-     * OPERACION DE ACTUALIZACION MASIVA QUE MODIFICA EL ESTADO
-     * DE ACTIVACION DE UN USUARIO ESPECIFICO. OPTIMIZA LA OPERACION
-     * AL EVITAR CARGAR LA ENTIDAD COMPLETA.
-     *
-     * @param userId ID DEL USUARIO A ACTUALIZAR
-     * @param active NUEVO ESTADO DE ACTIVACION
-     */
-    @Query("UPDATE User u SET u.active = :active WHERE u.id = :userId")
-    void updateUserActiveStatus(@Param("userId") Long userId, @Param("active") Boolean active);
 }
