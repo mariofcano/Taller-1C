@@ -1,0 +1,1138 @@
+/*
+ * ESTILOS PUBLICOS PARA EL SISTEMA DE BIBLIOTECA DIGITAL
+ *
+ * DISEÑO AQUI TODOS LOS ESTILOS QUE UTILIZO EN LAS PAGINAS PUBLICAS
+ * DEL SISTEMA, AQUELLAS A LAS QUE PUEDEN ACCEDER VISITANTES SIN NECESIDAD
+ * DE AUTENTICACION. MANTENGO UN DISEÑO CONSISTENTE Y ATRACTIVO QUE
+ * TRANSMITA PROFESIONALISMO Y FACILIDAD DE USO.
+ *
+ * ESTOS ESTILOS CUBREN:
+ * - PAGINA PRINCIPAL CON HERO SECTION Y ESTADISTICAS
+ * - CATALOGO PUBLICO DE LIBROS
+ * - FORMULARIOS DE LOGIN Y REGISTRO
+ * - PAGINAS DE BUSQUEDA Y RESULTADOS
+ * - FOOTER Y ELEMENTOS COMUNES
+ *
+ * UTILIZO VARIABLES CSS PARA MANTENER CONSISTENCIA EN COLORES,
+ * ESPACIADOS Y TRANSICIONES A TRAVES DE TODA LA INTERFAZ PUBLICA.
+ *
+ * @author MARIO FLORES
+ * @version 1.0
+ * @since 2025-05-27
+ */
+
+/* ===== VARIABLES CSS GLOBALES PARA CONSISTENCIA ===== */
+:root {
+    /* PALETA DE COLORES PRINCIPAL DEL SISTEMA */
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+
+    /* COLORES SOLIDOS PARA ELEMENTOS ESPECIFICOS */
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --accent-color: #f093fb;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --white-color: #ffffff;
+
+    /* COLORES DE TEXTO CON DIFERENTES OPACIDADES */
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #6c757d;
+    --text-light: rgba(255, 255, 255, 0.9);
+
+    /* SOMBRAS PARA PROFUNDIDAD Y ELEVACION */
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(0, 0, 0, 0.2);
+    --shadow-glow: 0 0 20px rgba(102, 126, 234, 0.3);
+
+    /* TRANSICIONES SUAVES PARA ANIMACIONES */
+    --transition-fast: all 0.15s ease-in-out;
+    --transition-normal: all 0.3s ease-in-out;
+    --transition-slow: all 0.5s ease-in-out;
+
+    /* BORDER RADIUS PARA ELEMENTOS REDONDEADOS */
+    --border-radius-sm: 0.375rem;
+    --border-radius-md: 0.5rem;
+    --border-radius-lg: 0.75rem;
+    --border-radius-xl: 1rem;
+    --border-radius-pill: 50rem;
+
+    /* ESPACIADOS CONSISTENTES */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 3rem;
+
+    /* TIPOGRAFIA */
+    --font-family-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-family-secondary: 'Georgia', 'Times New Roman', serif;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+}
+
+/* ===== RESET Y CONFIGURACION BASE ===== */
+* {
+    /* ASEGURO CALCULO CONSISTENTE DE TAMAÑOS */
+    box-sizing: border-box;
+}
+
+body {
+    /* FUENTE PRINCIPAL PROFESIONAL Y LEGIBLE */
+    font-family: var(--font-family-primary);
+    /* PESO DE FUENTE NORMAL PARA LEGIBILIDAD */
+    font-weight: var(--font-weight-normal);
+    /* ALTURA DE LINEA OPTIMIZADA PARA LECTURA */
+    line-height: 1.6;
+    /* COLOR DE TEXTO PRINCIPAL */
+    color: var(--text-primary);
+    /* FONDO SUAVE PARA REDUCIR FATIGA VISUAL */
+    background-color: var(--light-color);
+    /* SUAVIZADO DE FUENTES PARA MEJOR RENDERIZADO */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* ELIMINO MARGENES POR DEFECTO */
+    margin: 0;
+    /* PADDING CERO PARA CONTROL TOTAL */
+    padding: 0;
+    /* ALTURA MINIMA PARA PANTALLAS CORTAS */
+    min-height: 100vh;
+}
+
+/* ===== SECCION HERO PRINCIPAL ===== */
+.hero-section {
+    /* GRADIENTE ATRACTIVO COMO FONDO PRINCIPAL */
+    background: var(--primary-gradient);
+    /* TEXTO BLANCO SOBRE FONDO OSCURO */
+    color: var(--white-color);
+    /* ESPACIADO VERTICAL GENEROSO */
+    padding: 4rem 0 5rem 0;
+    /* POSICION RELATIVA PARA ELEMENTOS ABSOLUTOS */
+    position: relative;
+    /* DESBORDAMIENTO OCULTO PARA EFECTOS VISUALES */
+    overflow: hidden;
+    /* ALTURA MINIMA PARA IMPACTO VISUAL */
+    min-height: 60vh;
+    /* CENTRADO VERTICAL DEL CONTENIDO */
+    display: flex;
+    align-items: center;
+}
+
+/* EFECTO DE PARTICULAS O PATRON DE FONDO */
+.hero-section::before {
+    /* PSEUDO-ELEMENTO PARA DECORACION */
+    content: '';
+    /* POSICIONAMIENTO ABSOLUTO */
+    position: absolute;
+    /* COBERTURA COMPLETA */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* PATRON DE PUNTOS DECORATIVO */
+    background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 30px 30px;
+    /* DETRAS DEL CONTENIDO PRINCIPAL */
+    z-index: 1;
+    /* ANIMACION SUTIL */
+    animation: float 20s ease-in-out infinite;
+}
+
+/* ANIMACION DE FLOTACION PARA EL PATRON */
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+/* CONTENIDO PRINCIPAL DEL HERO */
+.hero-content {
+    /* ENCIMA DEL PATRON DE FONDO */
+    position: relative;
+    z-index: 2;
+}
+
+/* TITULO PRINCIPAL DEL HERO */
+.hero-title {
+    /* TAMAÑO DE FUENTE PROMINENTE */
+    font-size: 3.5rem;
+    /* PESO BOLD PARA IMPACTO */
+    font-weight: var(--font-weight-bold);
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 1.5rem;
+    /* SOMBRA DE TEXTO PARA PROFUNDIDAD */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    /* ANIMACION DE ENTRADA */
+    animation: fadeInUp 1s ease-out;
+}
+
+/* SUBTITULO DEL HERO */
+.hero-subtitle {
+    /* TAMAÑO MODERADO PARA JERARQUIA */
+    font-size: 1.5rem;
+    /* PESO LIGERO PARA CONTRASTE */
+    font-weight: var(--font-weight-light);
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 2rem;
+    /* OPACIDAD REDUCIDA PARA JERARQUIA */
+    opacity: 0.9;
+    /* ANIMACION CON DELAY */
+    animation: fadeInUp 1s ease-out 0.3s both;
+}
+
+/* BARRA DE BUSQUEDA DEL HERO */
+.hero-search {
+    /* MARGEN SUPERIOR PARA SEPARACION */
+    margin-top: 2rem;
+    /* ANIMACION CON MAYOR DELAY */
+    animation: fadeInUp 1s ease-out 0.6s both;
+}
+
+/* CAMPO DE BUSQUEDA PRINCIPAL */
+.hero-search .form-control {
+    /* ALTURA PROMINENTE */
+    height: 60px;
+    /* TAMAÑO DE FUENTE LEGIBLE */
+    font-size: 1.1rem;
+    /* BORDES REDONDEADOS */
+    border-radius: var(--border-radius-lg);
+    /* BORDE TRANSPARENTE */
+    border: 2px solid transparent;
+    /* SOMBRA PARA PROFUNDIDAD */
+    box-shadow: var(--shadow-lg);
+    /* TRANSICION SUAVE */
+    transition: var(--transition-normal);
+}
+
+/* ESTADO FOCUS DEL CAMPO DE BUSQUEDA */
+.hero-search .form-control:focus {
+    /* BORDE BLANCO EN FOCUS */
+    border-color: rgba(255,255,255,0.5);
+    /* SOMBRA BRILLANTE EN FOCUS */
+    box-shadow: var(--shadow-glow);
+    /* ELIMINO OUTLINE POR DEFECTO */
+    outline: none;
+}
+
+/* BOTON DE BUSQUEDA */
+.hero-search .btn {
+    /* ALTURA CONSISTENTE CON EL CAMPO */
+    height: 60px;
+    /* ANCHURA FIJA PARA CONSISTENCIA */
+    width: 60px;
+    /* BORDES REDONDEADOS */
+    border-radius: var(--border-radius-lg);
+    /* FONDO BLANCO SEMI-TRANSPARENTE */
+    background: rgba(255,255,255,0.2);
+    /* BORDE BLANCO SEMI-TRANSPARENTE */
+    border: 2px solid rgba(255,255,255,0.3);
+    /* COLOR DE TEXTO BLANCO */
+    color: var(--white-color);
+    /* TRANSICION SUAVE */
+    transition: var(--transition-normal);
+}
+
+/* ESTADO HOVER DEL BOTON DE BUSQUEDA */
+.hero-search .btn:hover {
+    /* FONDO MAS OPACO EN HOVER */
+    background: rgba(255,255,255,0.3);
+    /* BORDE MAS VISIBLE EN HOVER */
+    border-color: rgba(255,255,255,0.5);
+    /* TRANSFORMACION SUTIL */
+    transform: translateY(-2px);
+}
+
+/* ===== SECCION DE ESTADISTICAS ===== */
+.stats-section {
+    /* ESPACIADO VERTICAL GENEROSO */
+    padding: 5rem 0;
+    /* FONDO BLANCO PARA CONTRASTE */
+    background: var(--white-color);
+    /* POSICION RELATIVA */
+    position: relative;
+}
+
+/* TARJETAS DE ESTADISTICAS */
+.stats-card {
+    /* FONDO BLANCO LIMPIO */
+    background: var(--white-color);
+    /* BORDES REDONDEADOS SUAVES */
+    border-radius: var(--border-radius-xl);
+    /* ESPACIADO INTERNO GENEROSO */
+    padding: 2.5rem 1.5rem;
+    /* CENTRADO DEL CONTENIDO */
+    text-align: center;
+    /* SOMBRA PARA ELEVACION */
+    box-shadow: var(--shadow-md);
+    /* TRANSICION SUAVE PARA INTERACCIONES */
+    transition: var(--transition-normal);
+    /* ALTURA COMPLETA PARA UNIFORMIDAD */
+    height: 100%;
+    /* BORDE SUTIL */
+    border: 1px solid rgba(0,0,0,0.05);
+    /* POSICION RELATIVA PARA EFECTOS */
+    position: relative;
+    /* DESBORDAMIENTO OCULTO */
+    overflow: hidden;
+}
+
+/* EFECTO DECORATIVO EN LAS TARJETAS */
+.stats-card::before {
+    /* PSEUDO-ELEMENTO DECORATIVO */
+    content: '';
+    /* POSICIONAMIENTO ABSOLUTO */
+    position: absolute;
+    /* POSICION SUPERIOR */
+    top: 0;
+    left: 0;
+    right: 0;
+    /* ALTURA PEQUENA */
+    height: 4px;
+    /* GRADIENTE DECORATIVO */
+    background: var(--primary-gradient);
+    /* TRANSICION SUAVE */
+    transition: var(--transition-normal);
+}
+
+/* ESTADO HOVER DE LAS TARJETAS */
+.stats-card:hover {
+    /* ELEVACION AL HACER HOVER */
+    transform: translateY(-10px);
+    /* SOMBRA MAS PROMINENTE */
+    box-shadow: var(--shadow-xl);
+}
+
+/* EXPANSION DEL EFECTO DECORATIVO EN HOVER */
+.stats-card:hover::before {
+    /* ALTURA MAYOR EN HOVER */
+    height: 6px;
+}
+
+/* ICONOS DE LAS ESTADISTICAS */
+.stats-icon {
+    /* TAMAÑO PROMINENTE */
+    font-size: 3rem;
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 1.5rem;
+    /* GRADIENTE COMO COLOR */
+    background: var(--primary-gradient);
+    /* CLIP DEL TEXTO PARA GRADIENTE */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    /* TRANSICION SUAVE */
+    transition: var(--transition-normal);
+}
+
+/* ANIMACION DEL ICONO EN HOVER */
+.stats-card:hover .stats-icon {
+    /* ROTACION SUTIL EN HOVER */
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* NUMEROS DE LAS ESTADISTICAS */
+.stats-number {
+    /* TAMAÑO DE FUENTE PROMINENTE */
+    font-size: 3rem;
+    /* PESO BOLD PARA ENFASIS */
+    font-weight: var(--font-weight-bold);
+    /* COLOR PRIMARIO */
+    color: var(--primary-color);
+    /* ESPACIADO INFERIOR MINIMO */
+    margin-bottom: 0.5rem;
+    /* ALTURA DE LINEA COMPACTA */
+    line-height: 1;
+    /* ANIMACION DE CONTEO (SE ACTIVA CON JS) */
+    transition: var(--transition-normal);
+}
+
+/* ETIQUETAS DE LAS ESTADISTICAS */
+.stats-label {
+    /* COLOR SECUNDARIO PARA JERARQUIA */
+    color: var(--text-secondary);
+    /* PESO DE FUENTE MEDIO */
+    font-weight: var(--font-weight-medium);
+    /* TAMAÑO MODERADO */
+    font-size: 1.1rem;
+    /* ELIMINACION DE MARGEN INFERIOR */
+    margin-bottom: 0;
+    /* MAYUSCULAS PARA ENFASIS */
+    text-transform: uppercase;
+    /* ESPACIADO ENTRE LETRAS */
+    letter-spacing: 0.5px;
+}
+
+/* ===== SECCION DE LIBROS DESTACADOS ===== */
+.featured-section {
+    /* ESPACIADO VERTICAL */
+    padding: 5rem 0;
+    /* FONDO SUAVE */
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+/* TITULO DE LA SECCION DESTACADOS */
+.featured-title {
+    /* CENTRADO DEL TEXTO */
+    text-align: center;
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 3rem;
+    /* PESO BOLD */
+    font-weight: var(--font-weight-bold);
+    /* COLOR PRIMARIO */
+    color: var(--primary-color);
+}
+
+/* TARJETAS DE LIBROS DESTACADOS */
+.book-card {
+    /* FONDO BLANCO */
+    background: var(--white-color);
+    /* BORDES REDONDEADOS */
+    border-radius: var(--border-radius-lg);
+    /* ELIMINO BORDE POR DEFECTO */
+    border: none;
+    /* SOMBRA SUTIL */
+    box-shadow: var(--shadow-md);
+    /* TRANSICION SUAVE */
+    transition: var(--transition-normal);
+    /* ALTURA COMPLETA */
+    height: 100%;
+    /* DESBORDAMIENTO OCULTO */
+    overflow: hidden;
+    /* POSICION RELATIVA */
+    position: relative;
+}
+
+/* ESTADO HOVER DE LAS TARJETAS DE LIBROS */
+.book-card:hover {
+    /* ELEVACION EN HOVER */
+    transform: translateY(-8px);
+    /* SOMBRA MAS PROMINENTE */
+    box-shadow: var(--shadow-xl);
+}
+
+/* CUERPO DE LA TARJETA DE LIBRO */
+.book-card .card-body {
+    /* ESPACIADO INTERNO */
+    padding: 2rem;
+    /* FLEXBOX PARA DISTRIBUCION */
+    display: flex;
+    flex-direction: column;
+    /* ALTURA COMPLETA */
+    height: 100%;
+}
+
+/* TITULO DEL LIBRO */
+.book-title {
+    /* PESO SEMI-BOLD */
+    font-weight: var(--font-weight-semibold);
+    /* COLOR PRIMARIO */
+    color: var(--primary-color);
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 1rem;
+    /* ALTURA DE LINEA COMPACTA */
+    line-height: 1.3;
+    /* LIMITACION DE LINEAS */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* AUTOR DEL LIBRO */
+.book-author {
+    /* COLOR SECUNDARIO */
+    color: var(--text-secondary);
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 1rem;
+    /* PESO MEDIO */
+    font-weight: var(--font-weight-medium);
+}
+
+/* DESCRIPCION DEL LIBRO */
+.book-description {
+    /* COLOR MUTED */
+    color: var(--text-muted);
+    /* CRECIMIENTO FLEXIBLE */
+    flex-grow: 1;
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 1.5rem;
+    /* LIMITACION DE LINEAS */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* BADGE DE CATEGORIA */
+.category-badge {
+    /* TAMAÑO DE FUENTE PEQUEÑO */
+    font-size: 0.8rem;
+    /* ESPACIADO INTERNO */
+    padding: 0.5rem 1rem;
+    /* BORDES REDONDEADOS */
+    border-radius: var(--border-radius-pill);
+    /* PESO MEDIO */
+    font-weight: var(--font-weight-medium);
+    /* MAYUSCULAS */
+    text-transform: uppercase;
+    /* ESPACIADO ENTRE LETRAS */
+    letter-spacing: 0.5px;
+}
+
+/* ===== FORMULARIOS DE AUTENTICACION ===== */
+.auth-container {
+    /* ALTURA MINIMA PARA CENTRADO */
+    min-height: 100vh;
+    /* FLEXBOX PARA CENTRADO */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* FONDO CON GRADIENTE */
+    background: var(--primary-gradient);
+    /* ESPACIADO INTERNO */
+    padding: 2rem 0;
+}
+
+/* TARJETA DE AUTENTICACION */
+.auth-card {
+    /* FONDO BLANCO */
+    background: var(--white-color);
+    /* BORDES REDONDEADOS */
+    border-radius: var(--border-radius-xl);
+    /* SOMBRA PROMINENTE */
+    box-shadow: var(--shadow-xl);
+    /* ESPACIADO INTERNO GENEROSO */
+    padding: 3rem;
+    /* ANCHURA MAXIMA */
+    max-width: 400px;
+    /* ANCHURA COMPLETA */
+    width: 100%;
+    /* ANIMACION DE ENTRADA */
+    animation: fadeInScale 0.5s ease-out;
+}
+
+/* TITULO DEL FORMULARIO DE AUTH */
+.auth-title {
+    /* CENTRADO DEL TEXTO */
+    text-align: center;
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 2rem;
+    /* COLOR PRIMARIO */
+    color: var(--primary-color);
+    /* PESO BOLD */
+    font-weight: var(--font-weight-bold);
+}
+
+/* CAMPOS DE FORMULARIO */
+.form-control-custom {
+    /* ALTURA GENEROSA */
+    height: 50px;
+    /* TAMAÑO DE FUENTE */
+    font-size: 1rem;
+    /* BORDES REDONDEADOS */
+    border-radius: var(--border-radius-md);
+    /* BORDE SUTIL */
+    border: 2px solid #e9ecef;
+    /* ESPACIADO INTERNO */
+    padding: 0.75rem 1rem;
+    /* TRANSICION SUAVE */
+    transition: var(--transition-normal);
+}
+
+/* ESTADO FOCUS DE LOS CAMPOS */
+.form-control-custom:focus {
+    /* BORDE PRIMARIO EN FOCUS */
+    border-color: var(--primary-color);
+    /* SOMBRA EN FOCUS */
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    /* ELIMINO OUTLINE */
+    outline: none;
+}
+
+/* BOTON PRINCIPAL DE FORMULARIO */
+.btn-primary-custom {
+    /* ALTURA CONSISTENTE */
+    height: 50px;
+    /* FONDO CON GRADIENTE */
+    background: var(--primary-gradient);
+    /* ELIMINO BORDE */
+    border: none;
+    /* BORDES REDONDEADOS */
+    border-radius: var(--border-radius-md);
+    /* PESO SEMI-BOLD */
+    font-weight: var(--font-weight-semibold);
+    /* MAYUSCULAS */
+    text-transform: uppercase;
+    /* ESPACIADO ENTRE LETRAS */
+    letter-spacing: 1px;
+    /* TRANSICION SUAVE */
+    transition: var(--transition-normal);
+}
+
+/* ESTADO HOVER DEL BOTON PRINCIPAL */
+.btn-primary-custom:hover {
+    /* ELEVACION EN HOVER */
+    transform: translateY(-2px);
+    /* SOMBRA EN HOVER */
+    box-shadow: var(--shadow-lg);
+}
+
+/* ===== CATALOGO PUBLICO ===== */
+.catalog-section {
+    /* ESPACIADO VERTICAL */
+    padding: 3rem 0;
+}
+
+/* FILTROS DEL CATALOGO */
+.catalog-filters {
+    /* FONDO BLANCO */
+    background: var(--white-color);
+    /* BORDES REDONDEADOS */
+    border-radius: var(--border-radius-lg);
+    /* ESPACIADO INTERNO */
+    padding: 2rem;
+    /* SOMBRA SUTIL */
+    box-shadow: var(--shadow-sm);
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 2rem;
+}
+
+/* GRID DE LIBROS DEL CATALOGO */
+.books-grid {
+    /* ESPACIADO ENTRE ELEMENTOS */
+    gap: 2rem;
+}
+
+/* INDICADOR DE DISPONIBILIDAD */
+.availability-indicator {
+    /* FLEXBOX PARA ALINEACION */
+    display: flex;
+    align-items: center;
+    /* PESO SEMI-BOLD */
+    font-weight: var(--font-weight-semibold);
+    /* TAMAÑO DE FUENTE PEQUEÑO */
+    font-size: 0.9rem;
+}
+
+/* DISPONIBLE */
+.available {
+    /* COLOR VERDE */
+    color: var(--success-color);
+}
+
+/* NO DISPONIBLE */
+.unavailable {
+    /* COLOR ROJO */
+    color: var(--danger-color);
+}
+
+/* ===== FOOTER PRINCIPAL ===== */
+.main-footer {
+    /* FONDO OSCURO */
+    background: var(--dark-color);
+    /* TEXTO CLARO */
+    color: var(--text-light);
+    /* ESPACIADO VERTICAL */
+    padding: 3rem 0 2rem 0;
+    /* MARGEN SUPERIOR */
+    margin-top: auto;
+}
+
+/* TITULO DEL FOOTER */
+.footer-title {
+    /* PESO SEMI-BOLD */
+    font-weight: var(--font-weight-semibold);
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 1rem;
+    /* COLOR PRIMARIO */
+    color: var(--primary-color);
+}
+
+/* TEXTO DEL FOOTER */
+.footer-text {
+    /* OPACIDAD REDUCIDA */
+    opacity: 0.8;
+    /* ESPACIADO INFERIOR */
+    margin-bottom: 0;
+}
+
+/* ===== ALERTAS PERSONALIZADAS ===== */
+.alert-custom {
+    /* BORDES REDONDEADOS */
+    border-radius: var(--border-radius-md);
+    /* ELIMINO BORDE */
+    border: none;
+    /* ESPACIADO INTERNO */
+    padding: 1rem 1.5rem;
+    /* PESO MEDIO */
+    font-weight: var(--font-weight-medium);
+    /* SOMBRA SUTIL */
+    box-shadow: var(--shadow-sm);
+}
+
+/* ALERTA DE EXITO */
+.alert-success-custom {
+    /* FONDO VERDE SUAVE */
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    /* COLOR VERDE OSCURO */
+    color: #155724;
+}
+
+/* ALERTA DE ERROR */
+.alert-danger-custom {
+    /* FONDO ROJO SUAVE */
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    /* COLOR ROJO OSCURO */
+    color: #721c24;
+}
+
+/* ALERTA DE ADVERTENCIA */
+.alert-warning-custom {
+    /* FONDO AMARILLO SUAVE */
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    /* COLOR AMARILLO OSCURO */
+    color: #856404;
+}
+
+/* ===== PAGINACION PERSONALIZADA ===== */
+.pagination-custom {
+    /* CENTRADO */
+    justify-content: center;
+    /* MARGEN SUPERIOR */
+    margin-top: 3rem;
+}
+
+/* ELEMENTOS DE PAGINACION */
+.pagination-custom .page-item .page-link {
+    /* ELIMINO BORDES */
+    border: none;
+    /* ESPACIADO INTERNO */
+    padding: 0.75rem 1rem;
+    /* MARGEN HORIZONTAL */
+    margin: 0 0.25rem;
+    /* BORDES REDONDEADOS */
+    border-radius: var(--border-radius-md);
+    /* COLOR PRIMARIO */
+    color: var(--primary-color);
+    /* TRANSICION SUAVE */
+    transition: var(--transition-normal);
+}
+
+/* ESTADO HOVER DE PAGINACION */
+.pagination-custom .page-item .page-link:hover {
+    /* FONDO PRIMARIO EN HOVER */
+    background: var(--primary-color);
+    /* TEXTO BLANCO EN HOVER */
+    color: var(--white-color);
+    /* ELEVACION EN HOVER */
+    transform: translateY(-2px);
+}
+
+/* ELEMENTO ACTIVO DE PAGINACION */
+.pagination-custom .page-item.active .page-link {
+    /* FONDO CON GRADIENTE */
+    background: var(--primary-gradient);
+    /* TEXTO BLANCO */
+    color: var(--white-color);
+}
+
+/* ===== LOADING SPINNER ===== */
+.loading-spinner {
+    /* FLEXBOX PARA CENTRADO */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* ALTURA MINIMA */
+    min-height: 200px;
+}
+
+/* SPINNER ANIMADO */
+.spinner {
+    /* TAMAÑO DEL SPINNER */
+    width: 40px;
+    height: 40px;
+    /* BORDES PARA CREAR CIRCULO */
+    border: 4px solid rgba(102, 126, 234, 0.3);
+    border-top: 4px solid var(--primary-color);
+    /* FORMA CIRCULAR */
+    border-radius: 50%;
+    /* ANIMACION DE ROTACION */
+    animation: spin 1s linear infinite;
+}
+
+/* ANIMACION DE ROTACION */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===== ANIMACIONES DE ENTRADA ===== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* TABLETS Y PANTALLAS MEDIANAS */
+@media (max-width: 768px) {
+    /* TITULO HERO MAS PEQUEÑO */
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    /* SUBTITULO AJUSTADO */
+    .hero-subtitle {
+        font-size: 1.2rem;
+    }
+
+    /* SECCION HERO CON MENOS PADDING */
+    .hero-section {
+        padding: 3rem 0 4rem 0;
+        min-height: 50vh;
+    }
+
+    /* TARJETAS DE ESTADISTICAS MAS COMPACTAS */
+    .stats-card {
+        padding: 2rem 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* NUMEROS DE ESTADISTICAS MAS PEQUEÑOS */
+    .stats-number {
+        font-size: 2.5rem;
+    }
+
+    /* ICONOS DE ESTADISTICAS MAS PEQUEÑOS */
+    .stats-icon {
+        font-size: 2.5rem;
+    }
+
+    /* FORMULARIO DE AUTH MAS COMPACTO */
+    .auth-card {
+        padding: 2rem;
+        margin: 1rem;
+    }
+
+    /* FILTROS DE CATALOGO APILADOS */
+    .catalog-filters {
+        padding: 1.5rem;
+    }
+
+    /* GRID DE LIBROS CON MENOS ESPACIADO */
+    .books-grid {
+        gap: 1.5rem;
+    }
+}
+
+/* MOVILES Y PANTALLAS PEQUEÑAS */
+@media (max-width: 576px) {
+    /* TITULO HERO AUN MAS PEQUEÑO */
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    /* SUBTITULO COMPACTO */
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+
+    /* SECCION HERO MAS COMPACTA */
+    .hero-section {
+        padding: 2rem 0 3rem 0;
+        min-height: 40vh;
+    }
+
+    /* BARRA DE BUSQUEDA ADAPTADA */
+    .hero-search .form-control,
+    .hero-search .btn {
+        height: 50px;
+        font-size: 1rem;
+    }
+
+    /* ESTADISTICAS EN COLUMNA UNICA */
+    .stats-card {
+        padding: 1.5rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* NUMEROS MAS COMPACTOS */
+    .stats-number {
+        font-size: 2rem;
+    }
+
+    /* ICONOS MAS PEQUEÑOS */
+    .stats-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    /* FORMULARIO DE AUTH ADAPTADO */
+    .auth-card {
+        padding: 1.5rem;
+        margin: 0.5rem;
+        border-radius: var(--border-radius-lg);
+    }
+
+    /* CAMPOS DE FORMULARIO MAS COMPACTOS */
+    .form-control-custom,
+    .btn-primary-custom {
+        height: 45px;
+        font-size: 0.9rem;
+    }
+
+    /* TARJETAS DE LIBROS ADAPTADAS */
+    .book-card .card-body {
+        padding: 1.5rem;
+    }
+
+    /* TITULO DE LIBRO MAS PEQUEÑO */
+    .book-title {
+        font-size: 1.1rem;
+    }
+
+    /* FILTROS DE CATALOGO SIMPLIFICADOS */
+    .catalog-filters {
+        padding: 1rem;
+    }
+
+    /* FOOTER MAS COMPACTO */
+    .main-footer {
+        padding: 2rem 0 1rem 0;
+        text-align: center;
+    }
+}
+
+/* PANTALLAS EXTRA GRANDES */
+@media (min-width: 1400px) {
+    /* TITULO HERO MAS GRANDE */
+    .hero-title {
+        font-size: 4rem;
+    }
+
+    /* SUBTITULO EXPANDIDO */
+    .hero-subtitle {
+        font-size: 1.8rem;
+    }
+
+    /* CONTENEDORES MAS ANCHOS */
+    .container-xl {
+        max-width: 1320px;
+    }
+
+    /* TARJETAS DE ESTADISTICAS MAS ESPACIOSAS */
+    .stats-card {
+        padding: 3rem 2rem;
+    }
+
+    /* NUMEROS DE ESTADISTICAS MAS PROMINENTES */
+    .stats-number {
+        font-size: 3.5rem;
+    }
+
+    /* ICONOS MAS GRANDES */
+    .stats-icon {
+        font-size: 3.5rem;
+    }
+}
+
+/* ===== UTILIDADES ADICIONALES ===== */
+
+/* CLASE PARA TEXTO CON GRADIENTE */
+.text-gradient {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* CLASE PARA SOMBRA PERSONALIZADA */
+.shadow-custom {
+    box-shadow: var(--shadow-xl);
+}
+
+/* CLASE PARA ELEVACION EN HOVER */
+.hover-lift {
+    transition: var(--transition-normal);
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* CLASE PARA ELEMENTOS QUE BRILLAN */
+.glow-effect {
+    box-shadow: var(--shadow-glow);
+}
+
+/* CLASE PARA BORDES REDONDEADOS */
+.rounded-custom {
+    border-radius: var(--border-radius-xl);
+}
+
+/* CLASE PARA CENTRADO PERFECTO */
+.center-absolute {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* CLASE PARA OCULTAR EN MOVILES */
+.d-mobile-none {
+    display: block;
+}
+
+@media (max-width: 576px) {
+    .d-mobile-none {
+        display: none;
+    }
+}
+
+/* CLASE PARA MOSTRAR SOLO EN MOVILES */
+.d-mobile-block {
+    display: none;
+}
+
+@media (max-width: 576px) {
+    .d-mobile-block {
+        display: block;
+    }
+}
+
+/* ===== ESTADOS ESPECIALES ===== */
+
+/* ELEMENTOS DESHABILITADOS */
+.disabled-state {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+/* ELEMENTOS EN CARGA */
+.loading-state {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading-state::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ELEMENTOS CON ERROR */
+.error-state {
+    border: 2px solid var(--danger-color);
+    background: rgba(220, 53, 69, 0.1);
+}
+
+/* ELEMENTOS CON EXITO */
+.success-state {
+    border: 2px solid var(--success-color);
+    background: rgba(40, 167, 69, 0.1);
+}
+
+/* ===== ACCESIBILIDAD ===== */
+
+/* SKIP LINKS PARA NAVEGACION CON TECLADO */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--primary-color);
+    color: var(--white-color);
+    padding: 8px;
+    text-decoration: none;
+    border-radius: var(--border-radius-sm);
+    z-index: 1000;
+}
+
+.skip-link:focus {
+    top: 6px;
+}
+
+/* ELEMENTOS ENFOCADOS */
+.focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* TEXTO PARA LECTORES DE PANTALLA */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ===== MODO OSCURO (PREPARACION PARA FUTURO) ===== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --light-color: #1a1a1a;
+        --white-color: #2d2d2d;
+        --text-primary: #e9ecef;
+        --text-secondary: #adb5bd;
+        --text-muted: #6c757d;
+    }
+
+    /* SOLO APLICAR SI LA CLASE DARK-MODE ESTA PRESENTE */
+    .dark-mode {
+        background-color: var(--light-color);
+        color: var(--text-primary);
+    }
+
+    .dark-mode .stats-card,
+    .dark-mode .book-card,
+    .dark-mode .auth-card {
+        background: var(--white-color);
+        color: var(--text-primary);
+    }
+
+    .dark-mode .form-control-custom {
+        background: var(--white-color);
+        color: var(--text-primary);
+        border-color: #495057;
+    }
+}
