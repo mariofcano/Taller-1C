@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Listado de Libros</title>
+    <meta charset="UTF-8">
+    <!-- CSS SE APLICA DESDE OTRA RAMA O LAYOUT BASE -->
+</head>
+<body>
+<h1>Listado de Libros</h1>
+
+<!-- BOTON PARA CREAR NUEVO LIBRO -->
+<a th:href="@{/books/create}">Nuevo libro</a>
+
+<!-- TABLA DE LIBROS -->
+<table border="1">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Título</th>
+        <th>Autor</th>
+        <th>Categoría</th>
+        <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- AQUI RECORRO LA LISTA DE LIBROS -->
+    <tr th:each="book : ${books}">
+        <td th:text="${book.bookId}">1</td>
+        <td th:text="${book.title}">Titulo</td>
+        <td th:text="${book.author}">Autor</td>
+        <td th:text="${book.category}">Categoria</td>
+        <td>
+            <a th:href="@{/books/view/{id}(id=${book.bookId})}">Ver</a> |
+            <a th:href="@{/books/edit/{id}(id=${book.bookId})}">Editar</a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
