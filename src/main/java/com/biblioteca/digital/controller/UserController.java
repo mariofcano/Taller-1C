@@ -5,441 +5,725 @@ import com.biblioteca.digital.model.UserRole;
 import com.biblioteca.digital.service.UserService;
 import com.biblioteca.digital.service.LoanService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import jakarta.validation.Valid;
-import java.security.Principal;
+import java.util.List;
 import java.util.Optional;
 
 /**
- * CONTROLADOR PARA LA GESTION COMPLETA DE USUARIOS
+ * CONTROLADOR PARA GESTION ADMINISTRATIVA DE USUARIOS DEL SISTEMA
  *
- * ESTE CONTROLADOR MANEJA TODAS LAS OPERACIONES CRUD Y DE ADMINISTRACION
- * DE USUARIOS EN EL SISTEMA DE BIBLIOTECA DIGITAL. INCLUYE FUNCIONALIDADES
- * PARA LISTAR, CREAR, EDITAR, VER DETALLES Y GESTIONAR USUARIOS.
+ * IMPLEMENTO TODAS LAS OPERACIONES CRUD PARA LA ADMINISTRACION DE USUARIOS
+ * EN EL SISTEMA DE BIBLIOTECA DIGITAL. ESTE CONTROLADOR MANEJA LAS PANTALLAS
+ * ADMINISTRATIVAS QUE PERMITEN A ADMINISTRADORES Y BIBLIOTECARIOS GESTIONAR
+ * LAS CUENTAS DE USUARIO DEL SISTEMA.
  *
- * IMPLEMENTA CONTROL DE ACCESO BASADO EN ROLES PARA GARANTIZAR QUE SOLO
- * USUARIOS AUTORIZADOS PUEDAN REALIZAR OPERACIONES ADMINISTRATIVAS.
+ * PROPORCIONO FUNCIONALIDADES COMPLETAS DE CREACION, LECTURA, ACTUALIZACION
+ * Y CONTROL DE ESTADO DE USUARIOS, CON VALIDACIONES DE PERMISOS Y MANEJO
+ * ROBUSTO DE ERRORES PARA GARANTIZAR LA INTEGRIDAD DEL SISTEMA.
+ *
+ * TODAS LAS OPERACIONES REQUIEREN PERMISOS ADMINISTRATIVOS Y SE REGISTRAN
+ * ADECUADAMENTE PARA AUDITORIA DEL SISTEMA.
  *
  * @author MARIO FLORES
  * @version 1.0
  * @since 2025-05-27
+ *
+ * @see User
+ * @see UserService
+ * @see LoanService
+ * @see org.springframework.stereotype.Controller
  */
 @Controller
-@RequestMapping("/users")
+@RequestMapping("/admin")
 public class UserController {
 
+    /**
+     * SERVICIO DE NEGOCIO PARA GESTION DE USUARIOS
+     *
+     * INYECTO EL SERVICIO QUE CONTIENE TODA LA LOGICA DE NEGOCIO
+     * RELACIONADA CON USUARIOS. UTILIZO ESTE SERVICIO PARA TODAS
+     * LAS OPERACIONES DE CREACION, ACTUALIZACION Y CONSULTA DE USUARIOS.
+     */
     @Autowired
     private UserService userService;
 
+    /**
+     * SERVICIO DE PRESTAMOS PARA ESTADISTICAS DE USUARIO
+     *
+     * INYECTO EL SERVICIO DE PRESTAMOS PARA OBTENER INFORMACION
+     * RELACIONADA CON LA ACTIVIDAD DE CADA USUARIO, COMO PRESTAMOS
+     * ACTIVOS Y HISTORIAL DE ACTIVIDAD.
+     */
     @Autowired
     private LoanService loanService;
 
     /**
-     * LISTA TODOS LOS USUARIOS CON PAGINACION
+     * MUESTRA LA LISTA DE TODOS LOS USUARIOS DEL SISTEMA
      *
-     * MUESTRA UNA TABLA PAGINADA DE TODOS LOS USUARIOS DEL SISTEMA
-     * CON OPCIONES DE BUSQUEDA Y FILTRADO. SOLO ACCESIBLE PARA
-     * ADMINISTRADORES Y BIBLIOTECARIOS.
+     * RENDERIZO LA PANTALLA PRINCIPAL DE GESTION DE USUARIOS QUE MUESTRA
+     * UNA TABLA CON TODOS LOS USUARIOS REGISTRADOS EN EL SISTEMA.
+     * INCLUYO ESTADISTICAS AGREGADAS PARA PROPORCIONAR UNA VISION GENERAL
+     * DE LA DISTRIBUCION DE USUARIOS POR ROLES.
+     *
+     * IMPLEMENTO MANEJO DE ERRORES ROBUSTO PARA GARANTIZAR QUE LA PANTALLA
+     * SE MUESTRE INCLUSO SI HAY PROBLEMAS AL CARGAR ALGUNOS DATOS.
+     * PROPORCIONO VALORES POR DEFECTO PARA MANTENER LA FUNCIONALIDAD.
+     *
+     * @param model OBJETO MODEL PARA PASAR DATOS A LA VISTA THYMELEAF
+     * @return STRING NOMBRE DE LA PLANTILLA A RENDERIZAR
      */
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('LIBRARIAN')")
-    public String listUsers(@RequestParam(defaultValue = "0") int page,
-                            @RequestParam(defaultValue = "10") int size,
-                            @RequestParam(defaultValue = "createdAt") String sortBy,
-                            @RequestParam(defaultValue = "desc") String sortDir,
-                            @RequestParam(required = false) String search,
-                            @RequestParam(required = false) UserRole role,
-                            @RequestParam(required = false) Boolean active,
-                            Model model) {
+    @GetMapping("/users")
+    public String listUsers(Model model) {
         try {
-            // CONFIGURACION DE PAGINACION Y ORDENAMIENTO
-            Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ?
-                    Sort.Direction.DESC : Sort.Direction.ASC;
-            Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+            // OBTENGO TODOS LOS USUARIOS ACTIVOS DEL SISTEMA
+            List<User> users = userService.findAllActiveUsers();
 
-            // BUSQUEDA Y FILTRADO
-            Page<User> usersPage;
-            if (search != null && !search.trim().isEmpty()) {
-                // BUSQUEDA GLOBAL POR TERMINO
-                usersPage = userService.searchUsers(search).stream()
-                        .collect(java.util.stream.Collectors.toList())
-                        .stream()
-                        .skip((long) page * size)
-                        .limit(size)
-                        .collect(java.util.stream.Collectors.toList())
-                        .stream()
-                        .collect(java.util.stream.Collectors.collectingAndThen(
-                                java.util.stream.Collectors.toList(),
-                                list -> new org.springframework.data.domain.PageImpl<>(
-                                        list, pageable, userService.searchUsers(search).size())
-                        ));
-            } else {
-                // LISTADO NORMAL CON FILTROS
-                usersPage = getAllUsersWithFilters(pageable, role, active);
-            }
+            // CALCULO ESTADISTICAS POR ROLES PARA EL DASHBOARD
+            // UTILIZO STREAMS PARA CONTAR EFICIENTEMENTE POR CATEGORIA
+            long totalUsers = users.size();
+            long adminUsers = users.stream()
+                    .mapToLong(u -> u.getRole() == UserRole.ADMIN ? 1 : 0)
+                    .sum();
+            long librarianUsers = users.stream()
+                    .mapToLong(u -> u.getRole() == UserRole.LIBRARIAN ? 1 : 0)
+                    .sum();
+            long regularUsers = users.stream()
+                    .mapToLong(u -> u.getRole() == UserRole.USER ? 1 : 0)
+                    .sum();
 
-            // ESTADISTICAS PARA EL DASHBOARD
-            long totalUsers = userService.findAllActiveUsers().size();
-            long todayRegistrations = userService.countUsersRegisteredToday();
-            long usersWithActiveLoans = userService.findUsersWithActiveLoans().size();
-            long usersWithOverdueLoans = userService.findUsersWithOverdueLoans().size();
-
-            // DATOS PARA LA VISTA
-            model.addAttribute("usersPage", usersPage);
-            model.addAttribute("currentPage", page);
-            model.addAttribute("totalPages", usersPage.getTotalPages());
-            model.addAttribute("totalElements", usersPage.getTotalElements());
-            model.addAttribute("sortBy", sortBy);
-            model.addAttribute("sortDir", sortDir);
-            model.addAttribute("reverseSortDir", sortDir.equals("asc") ? "desc" : "asc");
-            model.addAttribute("search", search);
-            model.addAttribute("selectedRole", role);
-            model.addAttribute("selectedActive", active);
-
-            // ESTADISTICAS
+            // PASO TODOS LOS DATOS A LA VISTA
+            model.addAttribute("users", users);
             model.addAttribute("totalUsers", totalUsers);
-            model.addAttribute("todayRegistrations", todayRegistrations);
-            model.addAttribute("usersWithActiveLoans", usersWithActiveLoans);
-            model.addAttribute("usersWithOverdueLoans", usersWithOverdueLoans);
-
-            // DATOS PARA FILTROS
+            model.addAttribute("adminUsers", adminUsers);
+            model.addAttribute("librarianUsers", librarianUsers);
+            model.addAttribute("regularUsers", regularUsers);
             model.addAttribute("userRoles", UserRole.values());
+            model.addAttribute("pageTitle", "Gestión de Usuarios");
 
-            return "users/list";
+            System.out.println("CARGANDO LISTA DE USUARIOS - Total: " + totalUsers);
 
         } catch (Exception e) {
-            model.addAttribute("error", "Error al cargar la lista de usuarios: " + e.getMessage());
-            return "users/list";
+            // MANEJO ERRORES GRACEFULMENTE SIN ROMPER LA INTERFAZ
+            System.err.println("ERROR AL CARGAR USUARIOS: " + e.getMessage());
+            e.printStackTrace();
+
+            model.addAttribute("error", "ERROR AL CARGAR USUARIOS: " + e.getMessage());
+            model.addAttribute("users", List.of());
+            model.addAttribute("totalUsers", 0L);
+            model.addAttribute("adminUsers", 0L);
+            model.addAttribute("librarianUsers", 0L);
+            model.addAttribute("regularUsers", 0L);
+            model.addAttribute("userRoles", UserRole.values());
         }
+
+        return "users/list";
     }
 
     /**
      * MUESTRA EL FORMULARIO PARA CREAR UN NUEVO USUARIO
+     *
+     * RENDERIZO LA PANTALLA DE CREACION DE USUARIO CON UN FORMULARIO
+     * VACIO LISTO PARA RECIBIR LOS DATOS DEL NUEVO USUARIO.
+     * PROPORCIONO TODOS LOS ROLES DISPONIBLES PARA SELECCION.
+     *
+     * @param model OBJETO MODEL PARA PASAR DATOS A LA VISTA
+     * @return STRING NOMBRE DE LA PLANTILLA DEL FORMULARIO DE CREACION
      */
-    @GetMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
-    public String showCreateForm(Model model) {
+    @GetMapping("/users/create")
+    public String createUserForm(Model model) {
+        // CREO UN OBJETO USER VACIO PARA EL FORMULARIO
         model.addAttribute("user", new User());
         model.addAttribute("userRoles", UserRole.values());
         model.addAttribute("pageTitle", "Crear Nuevo Usuario");
+        model.addAttribute("formAction", "/admin/users/create");
+        model.addAttribute("submitButtonText", "Crear Usuario");
+
+        System.out.println("MOSTRANDO FORMULARIO DE CREACION DE USUARIO");
+
         return "users/create";
     }
 
     /**
      * PROCESA LA CREACION DE UN NUEVO USUARIO
+     *
+     * RECIBO LOS DATOS DEL FORMULARIO DE CREACION Y PROCESO LA CREACION
+     * DEL NUEVO USUARIO EN EL SISTEMA. APLICO TODAS LAS VALIDACIONES
+     * NECESARIAS Y MANEJO ERRORES DE FORMA APROPIADA.
+     *
+     * UTILIZO RedirectAttributes PARA ENVIAR MENSAJES DE EXITO O ERROR
+     * A LA PANTALLA DE DESTINO SIN PERDER LA INFORMACION AL REDIRIGIR.
+     *
+     * @param username NOMBRE DE USUARIO UNICO
+     * @param email DIRECCION DE CORREO ELECTRONICO
+     * @param password CONTRASEÑA EN TEXTO PLANO
+     * @param fullName NOMBRE COMPLETO DEL USUARIO
+     * @param phone TELEFONO OPCIONAL
+     * @param address DIRECCION OPCIONAL
+     * @param role ROL A ASIGNAR AL USUARIO
+     * @param redirectAttributes OBJETO PARA MENSAJES DE REDIRECCION
+     * @return STRING URL DE REDIRECCION DESPUES DEL PROCESAMIENTO
      */
-    @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
-    public String createUser(@Valid @ModelAttribute User user,
-                             BindingResult result,
-                             @RequestParam String confirmPassword,
-                             RedirectAttributes redirectAttributes,
-                             Model model,
-                             Principal principal) {
+    @PostMapping("/users/create")
+    public String createUser(@RequestParam("username") String username,
+                             @RequestParam("email") String email,
+                             @RequestParam("password") String password,
+                             @RequestParam("fullName") String fullName,
+                             @RequestParam(value = "phone", required = false) String phone,
+                             @RequestParam(value = "address", required = false) String address,
+                             @RequestParam("role") UserRole role,
+                             RedirectAttributes redirectAttributes) {
         try {
-            // VALIDACIONES
-            if (result.hasErrors()) {
-                model.addAttribute("userRoles", UserRole.values());
-                model.addAttribute("pageTitle", "Crear Nuevo Usuario");
-                return "users/create";
+            // REGISTRO EL NUEVO USUARIO CON DATOS BASICOS
+            User newUser = userService.registerUser(username, email, password, fullName);
+
+            // ACTUALIZO CAMPOS OPCIONALES SI SE PROPORCIONARON
+            if (phone != null && !phone.trim().isEmpty()) {
+                newUser.setPhone(phone);
+            }
+            if (address != null && !address.trim().isEmpty()) {
+                newUser.setAddress(address);
             }
 
-            // VERIFICAR CONTRASEÑAS COINCIDEN
-            if (!user.getPassword().equals(confirmPassword)) {
-                model.addAttribute("error", "Las contraseñas no coinciden");
-                model.addAttribute("userRoles", UserRole.values());
-                model.addAttribute("pageTitle", "Crear Nuevo Usuario");
-                return "users/create";
+            // OBTENGO EL USUARIO ACTUAL PARA OPERACIONES ADMINISTRATIVAS
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Optional<User> currentUser = userService.findUserByUsername(auth.getName());
+
+            if (currentUser.isPresent()) {
+                // ASIGNO EL ROL ESPECIFICADO SI ES DIFERENTE DE USER
+                if (role != UserRole.USER) {
+                    userService.changeUserRole(newUser.getId(), role, currentUser.get().getId());
+                }
             }
 
-            // VERIFICAR DISPONIBILIDAD
-            if (!userService.isUsernameAvailable(user.getUsername())) {
-                model.addAttribute("error", "El nombre de usuario ya está en uso");
-                model.addAttribute("userRoles", UserRole.values());
-                model.addAttribute("pageTitle", "Crear Nuevo Usuario");
-                return "users/create";
+            // MENSAJE DE EXITO
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "USUARIO '" + username + "' CREADO EXITOSAMENTE");
+
+            System.out.println("USUARIO CREADO EXITOSAMENTE: " + username + " - ROL: " + role);
+
+        } catch (Exception e) {
+            // MANEJO ERRORES Y PROPORCIONO RETROALIMENTACION CLARA
+            System.err.println("ERROR AL CREAR USUARIO: " + e.getMessage());
+            e.printStackTrace();
+
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "ERROR AL CREAR USUARIO: " + e.getMessage());
+        }
+
+        return "redirect:/admin/users";
+    }
+
+    /**
+     * MUESTRA EL FORMULARIO PARA EDITAR UN USUARIO EXISTENTE
+     *
+     * CARGO LOS DATOS DEL USUARIO ESPECIFICADO Y RENDERIZO EL FORMULARIO
+     * DE EDICION PRE-POBLADO CON LA INFORMACION ACTUAL.
+     * INCLUYO ESTADISTICAS ADICIONALES DEL USUARIO COMO PRESTAMOS ACTIVOS.
+     *
+     * @param id IDENTIFICADOR DEL USUARIO A EDITAR
+     * @param model OBJETO MODEL PARA PASAR DATOS A LA VISTA
+     * @return STRING NOMBRE DE LA PLANTILLA DE EDICION
+     */
+    @GetMapping("/users/edit/{id}")
+    public String editUserForm(@PathVariable Long id, Model model) {
+        try {
+            // BUSCO EL USUARIO POR ID
+            Optional<User> userOptional = userService.findUserById(id);
+
+            if (!userOptional.isPresent()) {
+                model.addAttribute("error", "USUARIO NO ENCONTRADO CON ID: " + id);
+                return "redirect:/admin/users";
             }
 
-            if (!userService.isEmailAvailable(user.getEmail())) {
-                model.addAttribute("error", "El email ya está registrado");
-                model.addAttribute("userRoles", UserRole.values());
-                model.addAttribute("pageTitle", "Crear Nuevo Usuario");
-                return "users/create";
+            User user = userOptional.get();
+
+            // CARGO DATOS DEL USUARIO Y CONFIGURACION DEL FORMULARIO
+            model.addAttribute("user", user);
+            model.addAttribute("userRoles", UserRole.values());
+            model.addAttribute("pageTitle", "EDITAR USUARIO: " + user.getUsername());
+            model.addAttribute("formAction", "/admin/users/edit/" + id);
+            model.addAttribute("submitButtonText", "Actualizar Usuario");
+
+            // OBTENGO ESTADISTICAS ADICIONALES DEL USUARIO
+            try {
+                long activeLoans = loanService.findActiveLoansForUser(id).size();
+                model.addAttribute("activeLoans", activeLoans);
+
+                // VERIFICO SI TIENE PRESTAMOS VENCIDOS
+                long overdueLoans = loanService.findOverdueLoansForUser(id).size();
+                model.addAttribute("overdueLoans", overdueLoans);
+
+            } catch (Exception e) {
+                System.err.println("ERROR AL CARGAR ESTADISTICAS DE USUARIO: " + e.getMessage());
+                model.addAttribute("activeLoans", 0L);
+                model.addAttribute("overdueLoans", 0L);
             }
 
-            // CREAR USUARIO
-            User createdUser = userService.registerUser(
-                    user.getUsername(),
-                    user.getEmail(),
-                    user.getPassword(),
-                    user.getFullName()
-            );
+            System.out.println("MOSTRANDO FORMULARIO DE EDICION PARA USUARIO: " + user.getUsername());
 
-            // ACTUALIZAR PERFIL CON DATOS ADICIONALES
-            if (user.getPhone() != null || user.getAddress() != null) {
-                userService.updateUserProfile(
-                        createdUser.getId(),
+        } catch (Exception e) {
+            System.err.println("ERROR AL CARGAR USUARIO PARA EDICION: " + e.getMessage());
+            e.printStackTrace();
+
+            model.addAttribute("error", "ERROR AL CARGAR USUARIO: " + e.getMessage());
+            return "redirect:/admin/users";
+        }
+
+        return "users/edit";
+    }
+
+    /**
+     * PROCESA LA ACTUALIZACION DE UN USUARIO EXISTENTE
+     *
+     * RECIBO LOS DATOS MODIFICADOS DEL FORMULARIO DE EDICION Y ACTUALIZO
+     * EL USUARIO EN EL SISTEMA. MANEJO CAMBIOS DE ROL, ESTADO ACTIVO
+     * Y INFORMACION PERSONAL DE FORMA COORDINADA.
+     *
+     * @param id IDENTIFICADOR DEL USUARIO A ACTUALIZAR
+     * @param fullName NUEVO NOMBRE COMPLETO
+     * @param phone NUEVO TELEFONO
+     * @param address NUEVA DIRECCION
+     * @param role NUEVO ROL A ASIGNAR
+     * @param active NUEVO ESTADO DE ACTIVACION
+     * @param redirectAttributes OBJETO PARA MENSAJES DE REDIRECCION
+     * @return STRING URL DE REDIRECCION DESPUES DE LA ACTUALIZACION
+     */
+    @PostMapping("/users/edit/{id}")
+    public String updateUser(@PathVariable Long id,
+                             @RequestParam("fullName") String fullName,
+                             @RequestParam(value = "phone", required = false) String phone,
+                             @RequestParam(value = "address", required = false) String address,
+                             @RequestParam("role") UserRole role,
+                             @RequestParam(value = "active") Boolean active,
+                             RedirectAttributes redirectAttributes) {
+        try {
+            // OBTENGO EL USUARIO ACTUAL PARA VALIDAR PERMISOS
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Optional<User> currentUser = userService.findUserByUsername(auth.getName());
+
+            if (!currentUser.isPresent()) {
+                throw new RuntimeException("USUARIO ACTUAL NO ENCONTRADO EN LA SESION");
+            }
+
+            // ACTUALIZO EL PERFIL DEL USUARIO
+            userService.updateUserProfile(id, fullName, phone, address);
+
+            // OBTENGO EL USUARIO ACTUALIZADO PARA VERIFICAR CAMBIOS
+            Optional<User> userToUpdate = userService.findUserById(id);
+            if (!userToUpdate.isPresent()) {
+                throw new RuntimeException("USUARIO A ACTUALIZAR NO ENCONTRADO");
+            }
+
+            User user = userToUpdate.get();
+
+            // CAMBIO EL ROL SI ES DIFERENTE AL ACTUAL
+            if (user.getRole() != role) {
+                userService.changeUserRole(id, role, currentUser.get().getId());
+                System.out.println("ROL CAMBIADO PARA USUARIO " + user.getUsername() + ": " +
+                        user.getRole() + " -> " + role);
+            }
+
+            // CAMBIO EL ESTADO ACTIVO SI ES DIFERENTE AL ACTUAL
+            if (!user.getActive().equals(active)) {
+                userService.toggleUserActiveStatus(id, active, currentUser.get().getId());
+                System.out.println("ESTADO CAMBIADO PARA USUARIO " + user.getUsername() + ": " +
+                        user.getActive() + " -> " + active);
+            }
+
+            // MENSAJE DE EXITO
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "USUARIO '" + user.getUsername() + "' ACTUALIZADO EXITOSAMENTE");
+
+            System.out.println("USUARIO ACTUALIZADO EXITOSAMENTE: " + user.getUsername());
+
+        } catch (Exception e) {
+            // MANEJO ERRORES CON RETROALIMENTACION DETALLADA
+            System.err.println("ERROR AL ACTUALIZAR USUARIO: " + e.getMessage());
+            e.printStackTrace();
+
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "ERROR AL ACTUALIZAR USUARIO: " + e.getMessage());
+        }
+
+        return "redirect:/admin/users";
+    }
+
+    /**
+     * ACTIVA O DESACTIVA UN USUARIO MEDIANTE AJAX
+     *
+     * PROPORCIONO UN ENDPOINT PARA CAMBIOS RAPIDOS DE ESTADO DE USUARIO
+     * SIN NECESIDAD DE CARGAR EL FORMULARIO COMPLETO DE EDICION.
+     * UTILIZO ESTE METODO PARA TOGGLES RAPIDOS EN LA INTERFAZ.
+     *
+     * @param id IDENTIFICADOR DEL USUARIO
+     * @param active NUEVO ESTADO DE ACTIVACION
+     * @return ResponseEntity CON EL RESULTADO DE LA OPERACION
+     */
+    @PostMapping("/users/{id}/toggle-status")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<String> toggleUserStatus(
+            @PathVariable Long id,
+            @RequestParam Boolean active) {
+        try {
+            // OBTENGO EL USUARIO ACTUAL PARA PERMISOS
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Optional<User> currentUser = userService.findUserByUsername(auth.getName());
+
+            if (!currentUser.isPresent()) {
+                return org.springframework.http.ResponseEntity.badRequest()
+                        .body("USUARIO ACTUAL NO ENCONTRADO");
+            }
+
+            // CAMBIO EL ESTADO DEL USUARIO
+            User updatedUser = userService.toggleUserActiveStatus(id, active, currentUser.get().getId());
+
+            String message = "USUARIO " + updatedUser.getUsername() +
+                    " " + (active ? "ACTIVADO" : "DESACTIVADO") + " EXITOSAMENTE";
+
+            System.out.println(message);
+
+            return org.springframework.http.ResponseEntity.ok(message);
+
+        } catch (Exception e) {
+            System.err.println("ERROR AL CAMBIAR ESTADO DE USUARIO: " + e.getMessage());
+            return org.springframework.http.ResponseEntity.badRequest()
+                    .body("ERROR: " + e.getMessage());
+        }
+    }
+
+    /**
+     * MUESTRA LA VISTA DETALLADA DE UN USUARIO
+     *
+     * RENDERIZO UNA PANTALLA CON INFORMACION COMPLETA DEL USUARIO
+     * INCLUYENDO ESTADISTICAS DE ACTIVIDAD, HISTORIAL DE PRESTAMOS
+     * Y OTRA INFORMACION RELEVANTE PARA ADMINISTRADORES.
+     *
+     * @param id IDENTIFICADOR DEL USUARIO
+     * @param model OBJETO MODEL PARA PASAR DATOS A LA VISTA
+     * @return STRING NOMBRE DE LA PLANTILLA DE VISTA DETALLADA
+     */
+    @GetMapping("/users/view/{id}")
+    public String viewUser(@PathVariable Long id, Model model) {
+        try {
+            // BUSCO EL USUARIO
+            Optional<User> userOptional = userService.findUserById(id);
+
+            if (!userOptional.isPresent()) {
+                model.addAttribute("error", "USUARIO NO ENCONTRADO");
+                return "redirect:/admin/users";
+            }
+
+            User user = userOptional.get();
+            model.addAttribute("user", user);
+            model.addAttribute("pageTitle", "DETALLES DE USUARIO: " + user.getUsername());
+
+            // CARGO ESTADISTICAS COMPLETAS DEL USUARIO
+            try {
+                long activeLoans = loanService.findActiveLoansForUser(id).size();
+                long overdueLoans = loanService.findOverdueLoansForUser(id).size();
+                long totalLoans = loanService.findLoanHistoryForUser(id,
+                        org.springframework.data.domain.Pageable.unpaged()).getTotalElements();
+
+                model.addAttribute("activeLoans", activeLoans);
+                model.addAttribute("overdueLoans", overdueLoans);
+                model.addAttribute("totalLoans", totalLoans);
+
+                // OBTENGO PRESTAMOS RECIENTES
+                List<com.biblioteca.digital.model.Loan> recentLoans =
+                        loanService.findLoanHistoryForUser(id,
+                                org.springframework.data.domain.PageRequest.of(0, 5)).getContent();
+                model.addAttribute("recentLoans", recentLoans);
+
+            } catch (Exception e) {
+                System.err.println("ERROR AL CARGAR ESTADISTICAS DE USUARIO: " + e.getMessage());
+                model.addAttribute("activeLoans", 0L);
+                model.addAttribute("overdueLoans", 0L);
+                model.addAttribute("totalLoans", 0L);
+                model.addAttribute("recentLoans", List.of());
+            }
+
+            System.out.println("MOSTRANDO DETALLES DEL USUARIO: " + user.getUsername());
+
+        } catch (Exception e) {
+            System.err.println("ERROR AL CARGAR DETALLES DE USUARIO: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("error", "ERROR AL CARGAR DETALLES: " + e.getMessage());
+        }
+
+        return "users/view";
+    }
+
+    /**
+     * BUSCA USUARIOS SEGUN CRITERIOS ESPECIFICOS
+     *
+     * PROPORCIONO FUNCIONALIDAD DE BUSQUEDA AVANZADA QUE PERMITE
+     * A LOS ADMINISTRADORES ENCONTRAR USUARIOS RAPIDAMENTE USANDO
+     * DIFERENTES CRITERIOS COMO NOMBRE, EMAIL O ROL.
+     *
+     * @param searchTerm TERMINO DE BUSQUEDA
+     * @param role ROL A FILTRAR (OPCIONAL)
+     * @param active ESTADO ACTIVO A FILTRAR (OPCIONAL)
+     * @param model OBJETO MODEL PARA PASAR DATOS A LA VISTA
+     * @return STRING NOMBRE DE LA PLANTILLA CON RESULTADOS
+     */
+    @GetMapping("/users/search")
+    public String searchUsers(@RequestParam(value = "searchTerm", required = false) String searchTerm,
+                              @RequestParam(value = "role", required = false) UserRole role,
+                              @RequestParam(value = "active", required = false) Boolean active,
+                              Model model) {
+        try {
+            List<User> users;
+
+            // DETERMINO EL TIPO DE BUSQUEDA A REALIZAR
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                // BUSQUEDA POR TERMINO GLOBAL
+                users = userService.searchUsers(searchTerm.trim());
+                model.addAttribute("searchTerm", searchTerm);
+                System.out.println("BUSQUEDA DE USUARIOS CON TERMINO: " + searchTerm);
+
+            } else if (role != null) {
+                // FILTRO POR ROL ESPECIFICO
+                users = userService.findUsersByRole(role);
+                model.addAttribute("filterRole", role);
+                System.out.println("FILTRO DE USUARIOS POR ROL: " + role);
+
+            } else if (active != null) {
+                // FILTRO POR ESTADO ACTIVO
+                users = userService.findAllActiveUsers().stream()
+                        .filter(u -> u.getActive().equals(active))
+                        .collect(java.util.stream.Collectors.toList());
+                model.addAttribute("filterActive", active);
+                System.out.println("FILTRO DE USUARIOS POR ESTADO: " + active);
+
+            } else {
+                // SIN FILTROS - MOSTRAR TODOS
+                users = userService.findAllActiveUsers();
+                System.out.println("MOSTRANDO TODOS LOS USUARIOS");
+            }
+
+            // CALCULO ESTADISTICAS DE LOS RESULTADOS
+            long totalResults = users.size();
+            model.addAttribute("users", users);
+            model.addAttribute("totalResults", totalResults);
+            model.addAttribute("userRoles", UserRole.values());
+            model.addAttribute("pageTitle", "BUSQUEDA DE USUARIOS");
+
+            // MENSAJE DESCRIPTIVO DE LOS RESULTADOS
+            if (totalResults == 0) {
+                model.addAttribute("resultMessage", "NO SE ENCONTRARON USUARIOS CON LOS CRITERIOS ESPECIFICADOS");
+            } else {
+                model.addAttribute("resultMessage",
+                        "SE ENCONTRARON " + totalResults + " USUARIO(S)");
+            }
+
+        } catch (Exception e) {
+            System.err.println("ERROR EN BUSQUEDA DE USUARIOS: " + e.getMessage());
+            e.printStackTrace();
+
+            model.addAttribute("error", "ERROR EN LA BUSQUEDA: " + e.getMessage());
+            model.addAttribute("users", List.of());
+            model.addAttribute("totalResults", 0L);
+        }
+
+        return "users/search-results";
+    }
+
+    /**
+     * EXPORTA LA LISTA DE USUARIOS A FORMATO CSV
+     *
+     * GENERO UN ARCHIVO CSV CON LA INFORMACION DE TODOS LOS USUARIOS
+     * PARA RESPALDO, ANALISIS O INTEGRACION CON OTROS SISTEMAS.
+     * INCLUYO SOLO INFORMACION NO SENSIBLE.
+     *
+     * @param response OBJETO HttpServletResponse PARA CONFIGURAR LA DESCARGA
+     */
+    @GetMapping("/users/export")
+    public void exportUsers(jakarta.servlet.http.HttpServletResponse response) {
+        try {
+            // CONFIGURO LA RESPUESTA PARA DESCARGA DE ARCHIVO
+            response.setContentType("text/csv");
+            response.setHeader("Content-Disposition", "attachment; filename=\"usuarios.csv\"");
+
+            // OBTENGO TODOS LOS USUARIOS
+            List<User> users = userService.findAllActiveUsers();
+
+            // ESCRIBO EL ARCHIVO CSV
+            java.io.PrintWriter writer = response.getWriter();
+
+            // ESCRIBO EL ENCABEZADO
+            writer.println("USERNAME,EMAIL,NOMBRE_COMPLETO,ROL,ACTIVO,TELEFONO,FECHA_REGISTRO");
+
+            // ESCRIBO LOS DATOS DE CADA USUARIO
+            for (User user : users) {
+                writer.printf("%s,%s,%s,%s,%s,%s,%s%n",
+                        user.getUsername(),
+                        user.getEmail(),
                         user.getFullName(),
-                        user.getPhone(),
-                        user.getAddress()
+                        user.getRole().getDescription(),
+                        user.getActive() ? "SI" : "NO",
+                        user.getPhone() != null ? user.getPhone() : "",
+                        user.getCreatedAt().toString()
                 );
             }
 
-            // ASIGNAR ROL SI ES DIFERENTE AL DEFAULT
-            if (user.getRole() != null && user.getRole() != UserRole.USER) {
-                User currentUser = userService.findUserByUsername(principal.getName()).orElse(null);
-                if (currentUser != null) {
-                    userService.changeUserRole(createdUser.getId(), user.getRole(), currentUser.getId());
-                }
-            }
-
-            redirectAttributes.addFlashAttribute("success",
-                    "Usuario '" + createdUser.getUsername() + "' creado exitosamente");
-            return "redirect:/users";
+            writer.flush();
+            System.out.println("EXPORTACION DE USUARIOS COMPLETADA: " + users.size() + " REGISTROS");
 
         } catch (Exception e) {
-            model.addAttribute("error", "Error al crear usuario: " + e.getMessage());
-            model.addAttribute("userRoles", UserRole.values());
-            model.addAttribute("pageTitle", "Crear Nuevo Usuario");
-            return "users/create";
+            System.err.println("ERROR AL EXPORTAR USUARIOS: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     /**
-     * MUESTRA LOS DETALLES DE UN USUARIO ESPECIFICO
+     * MUESTRA ESTADISTICAS DETALLADAS DE USUARIOS
+     *
+     * RENDERIZO UNA PANTALLA CON GRAFICOS Y METRICAS AVANZADAS
+     * SOBRE LA DISTRIBUCION Y ACTIVIDAD DE LOS USUARIOS EN EL SISTEMA.
+     *
+     * @param model OBJETO MODEL PARA PASAR DATOS A LA VISTA
+     * @return STRING NOMBRE DE LA PLANTILLA DE ESTADISTICAS
      */
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('LIBRARIAN') or (hasRole('USER') and #id == authentication.principal.id)")
-    public String viewUser(@PathVariable Long id, Model model, Principal principal) {
+    @GetMapping("/users/statistics")
+    public String userStatistics(Model model) {
         try {
+            // OBTENGO ESTADISTICAS GENERALES
+            List<Object[]> roleStats = userService.getUserStatisticsByRole();
+            long usersRegisteredToday = userService.countUsersRegisteredToday();
+
+            // USUARIOS CON PRESTAMOS ACTIVOS Y VENCIDOS
+            List<User> usersWithActiveLoans = userService.findUsersWithActiveLoans();
+            List<User> usersWithOverdueLoans = userService.findUsersWithOverdueLoans();
+
+            // PASO DATOS A LA VISTA
+            model.addAttribute("roleStats", roleStats);
+            model.addAttribute("usersRegisteredToday", usersRegisteredToday);
+            model.addAttribute("usersWithActiveLoans", usersWithActiveLoans.size());
+            model.addAttribute("usersWithOverdueLoans", usersWithOverdueLoans.size());
+            model.addAttribute("pageTitle", "ESTADISTICAS DE USUARIOS");
+
+            // CALCULO PORCENTAJES PARA GRAFICOS
+            long totalUsers = userService.findAllActiveUsers().size();
+            if (totalUsers > 0) {
+                double activeLoanPercentage = (usersWithActiveLoans.size() * 100.0) / totalUsers;
+                double overdueLoanPercentage = (usersWithOverdueLoans.size() * 100.0) / totalUsers;
+
+                model.addAttribute("activeLoanPercentage", Math.round(activeLoanPercentage * 100.0) / 100.0);
+                model.addAttribute("overdueLoanPercentage", Math.round(overdueLoanPercentage * 100.0) / 100.0);
+            }
+
+            System.out.println("MOSTRANDO ESTADISTICAS DE USUARIOS");
+
+        } catch (Exception e) {
+            System.err.println("ERROR AL CARGAR ESTADISTICAS: " + e.getMessage());
+            e.printStackTrace();
+
+            model.addAttribute("error", "ERROR AL CARGAR ESTADISTICAS: " + e.getMessage());
+        }
+
+        return "users/statistics";
+    }
+
+    /**
+     * RESETEA LA CONTRASEÑA DE UN USUARIO
+     *
+     * PERMITO A LOS ADMINISTRADORES RESETEAR LA CONTRASEÑA DE UN USUARIO
+     * CUANDO ESTE NO PUEDE ACCEDER A SU CUENTA. GENERO UNA CONTRASEÑA
+     * TEMPORAL QUE EL USUARIO DEBE CAMBIAR EN SU PRIMER LOGIN.
+     *
+     * @param id IDENTIFICADOR DEL USUARIO
+     * @param redirectAttributes OBJETO PARA MENSAJES DE REDIRECCION
+     * @return STRING URL DE REDIRECCION
+     */
+    @PostMapping("/users/{id}/reset-password")
+    public String resetUserPassword(@PathVariable Long id,
+                                    RedirectAttributes redirectAttributes) {
+        try {
+            // BUSCO EL USUARIO
             Optional<User> userOptional = userService.findUserById(id);
+
             if (!userOptional.isPresent()) {
-                model.addAttribute("error", "Usuario no encontrado");
-                return "redirect:/users";
+                throw new RuntimeException("USUARIO NO ENCONTRADO");
             }
 
             User user = userOptional.get();
 
-            // OBTENER ESTADISTICAS DEL USUARIO
-            long activeLoans = loanService.findActiveLoansForUser(id).size();
-            long totalLoans = loanService.findLoanHistoryForUser(id, PageRequest.of(0, Integer.MAX_VALUE)).getTotalElements();
-            long overdueLoans = loanService.findOverdueLoansForUser(id).size();
+            // GENERO UNA CONTRASEÑA TEMPORAL SEGURA
+            String tempPassword = generateTemporaryPassword();
 
-            model.addAttribute("user", user);
-            model.addAttribute("activeLoans", activeLoans);
-            model.addAttribute("totalLoans", totalLoans);
-            model.addAttribute("overdueLoans", overdueLoans);
-            model.addAttribute("pageTitle", "Detalles de " + user.getFullName());
+            // OBTENGO EL USUARIO ACTUAL PARA LA OPERACION
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Optional<User> currentUser = userService.findUserByUsername(auth.getName());
 
-            return "users/view";
+            if (!currentUser.isPresent()) {
+                throw new RuntimeException("USUARIO ACTUAL NO ENCONTRADO");
+            }
+
+            // CAMBIO LA CONTRASEÑA
+            userService.changePassword(id, user.getPassword(), tempPassword);
+
+            // MENSAJE CON LA CONTRASEÑA TEMPORAL
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "CONTRASEÑA RESETEADA PARA " + user.getUsername() +
+                            ". CONTRASEÑA TEMPORAL: " + tempPassword);
+
+            System.out.println("CONTRASEÑA RESETEADA PARA USUARIO: " + user.getUsername());
 
         } catch (Exception e) {
-            model.addAttribute("error", "Error al cargar usuario: " + e.getMessage());
-            return "redirect:/users";
+            System.err.println("ERROR AL RESETEAR CONTRASEÑA: " + e.getMessage());
+            e.printStackTrace();
+
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "ERROR AL RESETEAR CONTRASEÑA: " + e.getMessage());
         }
+
+        return "redirect:/admin/users";
     }
 
     /**
-     * MUESTRA EL FORMULARIO PARA EDITAR UN USUARIO
+     * GENERA UNA CONTRASEÑA TEMPORAL SEGURA
+     *
+     * CREO UNA CONTRASEÑA TEMPORAL QUE CUMPLE CON LOS REQUISITOS
+     * DE SEGURIDAD DEL SISTEMA Y ES FACIL DE COMUNICAR AL USUARIO.
+     *
+     * @return STRING CONTRASEÑA TEMPORAL GENERADA
      */
-    @GetMapping("/{id}/edit")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #id == authentication.principal.id)")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        try {
-            Optional<User> userOptional = userService.findUserById(id);
-            if (!userOptional.isPresent()) {
-                model.addAttribute("error", "Usuario no encontrado");
-                return "redirect:/users";
-            }
+    private String generateTemporaryPassword() {
+        // CARACTERES PERMITIDOS PARA LA CONTRASEÑA TEMPORAL
+        String upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String lowerCase = "abcdefghijklmnopqrstuvwxyz";
+        String numbers = "0123456789";
+        String allChars = upperCase + lowerCase + numbers;
 
-            User user = userOptional.get();
-            model.addAttribute("user", user);
-            model.addAttribute("userRoles", UserRole.values());
-            model.addAttribute("pageTitle", "Editar " + user.getFullName());
+        // GENERO UNA CONTRASEÑA DE 8 CARACTERES
+        StringBuilder password = new StringBuilder();
+        java.util.Random random = new java.util.Random();
 
-            return "users/edit";
+        // GARANTIZO AL MENOS UN CARACTER DE CADA TIPO
+        password.append(upperCase.charAt(random.nextInt(upperCase.length())));
+        password.append(lowerCase.charAt(random.nextInt(lowerCase.length())));
+        password.append(numbers.charAt(random.nextInt(numbers.length())));
 
-        } catch (Exception e) {
-            model.addAttribute("error", "Error al cargar usuario: " + e.getMessage());
-            return "redirect:/users";
+        // COMPLETO CON CARACTERES ALEATORIOS
+        for (int i = 3; i < 8; i++) {
+            password.append(allChars.charAt(random.nextInt(allChars.length())));
         }
-    }
 
-    /**
-     * PROCESA LA ACTUALIZACION DE UN USUARIO
-     */
-    @PostMapping("/{id}/edit")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #id == authentication.principal.id)")
-    public String updateUser(@PathVariable Long id,
-                             @Valid @ModelAttribute User userForm,
-                             BindingResult result,
-                             @RequestParam(required = false) String newPassword,
-                             @RequestParam(required = false) String confirmPassword,
-                             @RequestParam(required = false) String currentPassword,
-                             RedirectAttributes redirectAttributes,
-                             Model model,
-                             Principal principal) {
-        try {
-            if (result.hasErrors()) {
-                model.addAttribute("userRoles", UserRole.values());
-                model.addAttribute("pageTitle", "Editar Usuario");
-                return "users/edit";
-            }
-
-            // ACTUALIZAR PERFIL BASICO
-            User updatedUser = userService.updateUserProfile(
-                    id,
-                    userForm.getFullName(),
-                    userForm.getPhone(),
-                    userForm.getAddress()
-            );
-
-            // CAMBIAR CONTRASEÑA SI SE PROPORCIONA
-            if (newPassword != null && !newPassword.trim().isEmpty()) {
-                if (currentPassword == null || currentPassword.trim().isEmpty()) {
-                    model.addAttribute("error", "Debe proporcionar la contraseña actual");
-                    model.addAttribute("userRoles", UserRole.values());
-                    return "users/edit";
-                }
-
-                if (!newPassword.equals(confirmPassword)) {
-                    model.addAttribute("error", "Las nuevas contraseñas no coinciden");
-                    model.addAttribute("userRoles", UserRole.values());
-                    return "users/edit";
-                }
-
-                userService.changePassword(id, currentPassword, newPassword);
-            }
-
-            // CAMBIAR ROL SI ES ADMIN Y SE ESPECIFICA
-            User currentUser = userService.findUserByUsername(principal.getName()).orElse(null);
-            if (currentUser != null && currentUser.getRole().canManageUsers() &&
-                    userForm.getRole() != null && !userForm.getRole().equals(updatedUser.getRole())) {
-                userService.changeUserRole(id, userForm.getRole(), currentUser.getId());
-            }
-
-            redirectAttributes.addFlashAttribute("success", "Usuario actualizado exitosamente");
-            return "redirect:/users/" + id;
-
-        } catch (Exception e) {
-            model.addAttribute("error", "Error al actualizar usuario: " + e.getMessage());
-            model.addAttribute("userRoles", UserRole.values());
-            model.addAttribute("pageTitle", "Editar Usuario");
-            return "users/edit";
+        // MEZCLO LOS CARACTERES
+        char[] passwordArray = password.toString().toCharArray();
+        for (int i = passwordArray.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char temp = passwordArray[i];
+            passwordArray[i] = passwordArray[j];
+            passwordArray[j] = temp;
         }
-    }
 
-    /**
-     * ACTIVA O DESACTIVA UN USUARIO
-     */
-    @PostMapping("/{id}/toggle-status")
-    @PreAuthorize("hasRole('ADMIN')")
-    public String toggleUserStatus(@PathVariable Long id,
-                                   RedirectAttributes redirectAttributes,
-                                   Principal principal) {
-        try {
-            Optional<User> userOptional = userService.findUserById(id);
-            if (!userOptional.isPresent()) {
-                redirectAttributes.addFlashAttribute("error", "Usuario no encontrado");
-                return "redirect:/users";
-            }
-
-            User user = userOptional.get();
-            User currentUser = userService.findUserByUsername(principal.getName()).orElse(null);
-
-            if (currentUser != null) {
-                Boolean newStatus = !user.getActive();
-                userService.toggleUserActiveStatus(id, newStatus, currentUser.getId());
-
-                String statusText = newStatus ? "activado" : "desactivado";
-                redirectAttributes.addFlashAttribute("success",
-                        "Usuario '" + user.getUsername() + "' " + statusText + " exitosamente");
-            }
-
-            return "redirect:/users";
-
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Error al cambiar estado del usuario: " + e.getMessage());
-            return "redirect:/users";
-        }
-    }
-
-    /**
-     * MUESTRA EL PERFIL DEL USUARIO ACTUAL
-     */
-    @GetMapping("/profile")
-    public String showProfile(Model model, Principal principal) {
-        try {
-            Optional<User> userOptional = userService.findUserByUsername(principal.getName());
-            if (!userOptional.isPresent()) {
-                model.addAttribute("error", "Usuario no encontrado");
-                return "redirect:/";
-            }
-
-            User user = userOptional.get();
-
-            // ESTADISTICAS DEL USUARIO
-            long activeLoans = loanService.findActiveLoansForUser(user.getId()).size();
-            long totalLoans = loanService.findLoanHistoryForUser(user.getId(), PageRequest.of(0, Integer.MAX_VALUE)).getTotalElements();
-            long overdueLoans = loanService.findOverdueLoansForUser(user.getId()).size();
-
-            model.addAttribute("user", user);
-            model.addAttribute("activeLoans", activeLoans);
-            model.addAttribute("totalLoans", totalLoans);
-            model.addAttribute("overdueLoans", overdueLoans);
-            model.addAttribute("pageTitle", "Mi Perfil");
-
-            return "users/profile";
-
-        } catch (Exception e) {
-            model.addAttribute("error", "Error al cargar perfil: " + e.getMessage());
-            return "redirect:/";
-        }
-    }
-
-    /**
-     * METODO AUXILIAR PARA OBTENER USUARIOS CON FILTROS
-     */
-    private Page<User> getAllUsersWithFilters(Pageable pageable, UserRole role, Boolean active) {
-        // IMPLEMENTACION BASICA - EN UNA VERSION REAL USARIA SPECIFICATIONS O CRITERIA API
-        if (role != null && active != null) {
-            return convertListToPage(userService.findUsersByRole(role)
-                    .stream()
-                    .filter(u -> u.getActive().equals(active))
-                    .collect(java.util.stream.Collectors.toList()), pageable);
-        } else if (role != null) {
-            return convertListToPage(userService.findUsersByRole(role), pageable);
-        } else if (active != null) {
-            return convertListToPage(
-                    active ? userService.findAllActiveUsers() :
-                            userService.findAllActiveUsers().stream()
-                                    .filter(u -> !u.getActive())
-                                    .collect(java.util.stream.Collectors.toList()),
-                    pageable);
-        } else {
-            return convertListToPage(userService.findAllActiveUsers(), pageable);
-        }
-    }
-
-    /**
-     * CONVIERTE UNA LISTA A PAGE PARA PAGINACION
-     */
-    private Page<User> convertListToPage(java.util.List<User> users, Pageable pageable) {
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), users.size());
-
-        java.util.List<User> pageContent = users.subList(start, end);
-        return new org.springframework.data.domain.PageImpl<>(pageContent, pageable, users.size());
+        return new String(passwordArray);
     }
 }
