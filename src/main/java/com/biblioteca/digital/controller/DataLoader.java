@@ -131,7 +131,7 @@ public class DataLoader implements CommandLineRunner {
         librarian.setUsername("bibliotecario");
         librarian.setEmail("bibliotecario@biblioteca.com");
         librarian.setPassword(passwordEncoder.encode("biblio123"));
-        librarian.setFullName("Ana García - Bibliotecaria");
+        librarian.setFullName("Ana Garcia - Bibliotecaria");
         librarian.setRole(UserRole.LIBRARIAN);
         librarian.setActive(true);
         librarian.setPhone("+34 666 789 012");
@@ -140,11 +140,11 @@ public class DataLoader implements CommandLineRunner {
 
         // CREO USUARIOS REGULARES PARA PRESTAMOS
         List<String[]> usuariosData = Arrays.asList(
-                new String[]{"juan.perez", "juan.perez@email.com", "Juan Pérez López", "+34 666 111 222"},
-                new String[]{"maria.gonzalez", "maria.gonzalez@email.com", "María González Ruiz", "+34 666 333 444"},
-                new String[]{"carlos.rodriguez", "carlos.rodriguez@email.com", "Carlos Rodríguez Martín", "+34 666 555 666"},
-                new String[]{"laura.martin", "laura.martin@email.com", "Laura Martín Fernández", "+34 666 777 888"},
-                new String[]{"david.sanchez", "david.sanchez@email.com", "David Sánchez López", "+34 666 999 000"}
+                new String[]{"juan_perez", "juan_perez@email.com", "Juan Perez Lopez", "+34 666 111 222"},
+                new String[]{"maria_gonzalez", "maria_gonzalez@email.com", "Maria Gonzalez Ruiz", "+34 666 333 444"},
+                new String[]{"carlos_rodriguez", "carlos_rodriguez@email.com", "Carlos Rodriguez Martin", "+34 666 555 666"},
+                new String[]{"laura_martin", "laura_martin@email.com", "Laura Martin Fernandez", "+34 666 777 888"},
+                new String[]{"david_sanchez", "david_sanchez@email.com", "David Sanchez Lopez", "+34 666 999 000"}
         );
 
         for (String[] userData : usuariosData) {
@@ -156,7 +156,7 @@ public class DataLoader implements CommandLineRunner {
             user.setRole(UserRole.USER);
             user.setActive(true);
             user.setPhone(userData[3]);
-            user.setAddress("Dirección de " + userData[2]);
+            user.setAddress("Direccion de " + userData[2]);
             userRepository.save(user);
         }
 
@@ -352,7 +352,7 @@ public class DataLoader implements CommandLineRunner {
     private void updateBookLoanCounters() {
         List<Book> books = bookRepository.findAll();
         for (Book book : books) {
-            long loanCount = loanRepository.countByBook(book);
+            long loanCount = loanRepository.countActiveByBook(book);
             book.setLoanCount((int) loanCount);
             bookRepository.save(book);
         }

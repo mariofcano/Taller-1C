@@ -426,7 +426,7 @@ public class LoanController {
 
             User user = userOptional.get();
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "loanDate"));
-            Page<User> userLoansPage = loanService.findLoanHistoryForUser(userId, pageable);
+            Page<Loan> userLoansPage = loanService.findLoanHistoryForUser(userId, pageable);
 
             // ESTADISTICAS DEL USUARIO
             long activeLoans = loanService.findActiveLoansForUser(userId).size();
