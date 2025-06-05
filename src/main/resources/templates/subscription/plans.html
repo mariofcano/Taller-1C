@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planes Premium - Task Manager</title>
+    <!-- BOOTSTRAP PARA EL DISEÑO -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ICONOS DE BOOTSTRAP -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- MI CSS PERSONALIZADO -->
+    <link th:href="@{/css/public-styles.css}" rel="stylesheet">
+    <style>
+        .pricing-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        .pricing-card.premium {
+            border: 2px solid #ffd700;
+            position: relative;
+            overflow: hidden;
+        }
+        .pricing-card.premium::before {
+            content: "RECOMENDADO";
+            position: absolute;
+            top: 20px;
+            right: -30px;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            padding: 5px 40px;
+            font-size: 12px;
+            font-weight: bold;
+            transform: rotate(45deg);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        .feature-check {
+            color: #28a745;
+            margin-right: 8px;
+        }
+        .feature-cross {
+            color: #dc3545;
+            margin-right: 8px;
+        }
+        .usage-progress {
+            height: 8px;
+            border-radius: 10px;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body>
+<!-- BARRA DE NAVEGACIÓN -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-check-circle-fill me-2"></i>Task Manager
+        </a>
+
+        <!-- BOTÓN PARA MÓVILES -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- MENÚ DE NAVEGACIÓN -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tasks">Mis Tareas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users/catalog">Usuarios</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/maps">Maps</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-star-fill"></i> Premium
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item active" href="/subscription/plans">Ver Planes</a></li>
+                        <li><a class="dropdown-item" href="/subscription/manage">Mi Suscripción</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <!-- MENÚ DE USUARIO -->
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <span th:text="${currentUser.username}">Usuario</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/logout">Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="gradient-bg text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="bi bi-rocket-takeoff"></i>
+                    Lleva tu productividad al siguiente nivel
+                </h1>
+                <p class="lead mb-4">
+                    Desbloquea funcionalidades premium y gestiona tareas y ubicaciones sin límites.
+                    Tu éxito no tiene restricciones.
+                </p>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-success fs-6 me-3">
+                        <i class="bi bi-shield-check"></i> Pago 100% Seguro
+                    </span>
+                    <span class="badge bg-warning text-dark fs-6">
+                        <i class="bi bi-award"></i> Sin permanencia
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <i class="bi bi-star-fill" style="font-size: 8rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ESTADO ACTUAL DEL USUARIO -->
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-light border-start border-primary border-4" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-info-circle text-primary me-3" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <h6 class="mb-1">Tu plan actual:
+                            <strong th:text="${currentSubscription?.subscriptionPlan?.name ?: 'Sin suscripción'}">Plan Actual</strong>
+                            <span th:if="${hasPremium}" class="badge bg-success ms-2">
+                                <i class="bi bi-star-fill"></i> PREMIUM
+                            </span>
+                            <span th:if="${!hasPremium}" class="badge bg-secondary ms-2">
+                                <i class="bi bi-person"></i> GRATUITO
+                            </span>
+                        </h6>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-list-task"></i>
+                                    Tareas: <strong th:text="${usageStats.currentTasks}">0</strong>
+                                    <span th:if="${usageStats.hasTasksLimit()}"
+                                          th:text="'/ ' + ${usageStats.maxTasks}">/ 10</span>
+                                    <span th:if="${!usageStats.hasTasksLimit()}" class="text-success">/ ∞</span>
+                                </small>
+                                <div th:if="${usageStats.hasTasksLimit()}" class="progress usage-progress mt-1">
+                                    <div class="progress-bar bg-info"
+                                         th:style="'width: ' + ${usageStats.currentTasks * 100 / usageStats.maxTasks} + '%'"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-geo-alt"></i>
+                                    Ubicaciones: <strong th:text="${usageStats.currentLocations}">0</strong>
+                                    <span th:if="${usageStats.hasLocationsLimit()}"
+                                          th:text="'/ ' + ${usageStats.maxLocations}">/ 5</span>
+                                    <span th:if="${!usageStats.hasLocationsLimit()}" class="text-success">/ ∞</span>
+                                </small>
+                                <div th:if="${usageStats.hasLocationsLimit()}" class="progress usage-progress mt-1">
+                                    <div class="progress-bar bg-warning"
+                                         th:style="'width: ' + ${usageStats.currentLocations * 100 / usageStats.maxLocations} + '%'"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PLANES DE SUSCRIPCIÓN -->
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+
+        <!-- PLAN GRATUITO -->
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card pricing-card h-100 shadow-sm">
+                <div class="card-header bg-light text-center py-4">
+                    <i class="bi bi-person text-secondary" style="font-size: 3rem;"></i>
+                    <h3 class="card-title mt-2" th:text="${freePlan.name}">Plan Gratuito</h3>
+                    <div class="display-4 fw-bold text-dark">
+                        €<span th:text="${freePlan.price}">0</span>
+                        <small class="fs-6 text-muted">/mes</small>
+                    </div>
+                    <p class="text-muted mt-2" th:text="${freePlan.description}">
+                        Perfecto para empezar
+                    </p>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            <span th:text="${freePlan.maxTasks} + ' tareas máximo'">10 tareas máximo</span>
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            <span th:text="${freePlan.maxLocations} + ' ubicaciones máximo'">5 ubicaciones máximo</span>
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            Gestión básica de tareas
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            Mapas interactivos
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-cross bi bi-x-lg"></i>
+                            Sin estadísticas avanzadas
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-cross bi bi-x-lg"></i>
+                            Sin soporte prioritario
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <span th:if="${!hasPremium}" class="btn btn-outline-secondary btn-lg disabled">
+                        <i class="bi bi-check-circle"></i> Plan Actual
+                    </span>
+                    <span th:if="${hasPremium}" class="btn btn-outline-danger btn-lg">
+                        <i class="bi bi-arrow-down-circle"></i> Downgrade
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PLANES PREMIUM -->
+        <div th:each="plan, iterStat : ${premiumPlans}" class="col-lg-4 col-md-6 mb-4">
+            <div class="card pricing-card premium h-100 shadow-lg">
+                <div class="card-header bg-gradient text-white text-center py-4"
+                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="bi bi-star-fill" style="font-size: 3rem;"></i>
+                    <h3 class="card-title mt-2" th:text="${plan.name}">Plan Premium</h3>
+                    <div class="display-4 fw-bold">
+                        €<span th:text="${plan.price}">9.99</span>
+                        <small class="fs-6">/mes</small>
+                    </div>
+                    <p class="mt-2" th:text="${plan.description}">
+                        Para usuarios avanzados
+                    </p>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            <strong>Tareas ilimitadas</strong>
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            <strong>Ubicaciones ilimitadas</strong>
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            Todas las funcionalidades básicas
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            Estadísticas avanzadas
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            Exportación de datos
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            Soporte prioritario
+                        </li>
+                        <li class="mb-2">
+                            <i class="feature-check bi bi-check-lg"></i>
+                            Sin anuncios
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <span th:if="${currentSubscription?.subscriptionPlan?.id == plan.id}"
+                          class="btn btn-success btn-lg disabled">
+                        <i class="bi bi-check-circle"></i> Plan Activo
+                    </span>
+                    <a th:if="${currentSubscription?.subscriptionPlan?.id != plan.id}"
+                       th:href="@{/subscription/checkout/{id}(id=${plan.id})}"
+                       class="btn btn-primary btn-lg">
+                        <i class="bi bi-credit-card"></i> Contratar Ahora
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GARANTÍAS Y BENEFICIOS -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body text-center py-4">
+                    <h4 class="mb-4">
+                        <i class="bi bi-shield-check text-success"></i>
+                        ¿Por qué elegir Premium?
+                    </h4>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <i class="bi bi-infinity text-primary" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Sin Límites</h6>
+                            <small class="text-muted">Crea todas las tareas y ubicaciones que necesites</small>
+                        </div>
+                        <div class="col-md-3">
+                            <i class="bi bi-graph-up text-success" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Estadísticas</h6>
+                            <small class="text-muted">Analiza tu productividad con reportes detallados</small>
+                        </div>
+                        <div class="col-md-3">
+                            <i class="bi bi-headset text-info" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Soporte 24/7</h6>
+                            <small class="text-muted">Atención prioritaria cuando la necesites</small>
+                        </div>
+                        <div class="col-md-3">
+                            <i class="bi bi-x-circle text-danger" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2">Cancela Cuando Quieras</h6>
+                            <small class="text-muted">Sin permanencia ni penalizaciones</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ RÁPIDO -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <h5 class="text-center mb-4">
+                <i class="bi bi-question-circle"></i> Preguntas Frecuentes
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>¿Puedo cambiar de plan en cualquier momento?</h6>
+                            <p class="mb-0 text-muted">Sí, puedes actualizar o cancelar tu suscripción cuando quieras desde tu panel de gestión.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>¿Qué pasa con mis datos si cancelo?</h6>
+                            <p class="mb-0 text-muted">Tus datos se conservan, pero se aplicarán los límites del plan gratuito a tus nuevas creaciones.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS DE BOOTSTRAP -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- SCRIPT PERSONALIZADO -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ANIMACIÓN DE ENTRADA PARA LAS TARJETAS
+        const cards = document.querySelectorAll('.pricing-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 200);
+        });
+
+        // HIGHLIGHT PLAN ACTUAL
+        const currentPlanCard = document.querySelector('.btn:contains("Plan Actual"), .btn:contains("Plan Activo")');
+        if (currentPlanCard) {
+            const card = currentPlanCard.closest('.pricing-card');
+            if (card) {
+                card.style.borderColor = '#28a745';
+                card.style.borderWidth = '3px';
+            }
+        }
+    });
+</script>
+</body>
+</html>

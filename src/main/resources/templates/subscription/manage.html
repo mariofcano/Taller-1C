@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago Completado - Task Manager</title>
+
+    <!-- Cargo Bootstrap para el diseño responsivo y los estilos -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Añado mi CSS personalizado para mantener consistencia visual -->
+    <link th:href="@{/css/public-styles.css}" rel="stylesheet">
+
+    <style>
+        /**
+         * ESTILOS PERSONALIZADOS PARA LA PÁGINA DE ÉXITO
+         * Defino animaciones y efectos visuales para crear una experiencia positiva
+         */
+        .success-container {
+            /* Centro el contenido verticalmente para mejor impacto visual */
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-card {
+            /* Añado sombra y bordes redondeados para destacar el contenido */
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: none;
+        }
+
+        .success-header {
+            /* Gradiente verde para transmitir éxito y positividad */
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-radius: 15px 15px 0 0;
+            padding: 2rem;
+        }
+
+        .success-icon {
+            /* Animación del icono de éxito para captar atención */
+            font-size: 4rem;
+            animation: success-bounce 1s ease-in-out;
+        }
+
+        /* Defino la animación de rebote para el icono de éxito */
+        @keyframes success-bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .fade-in {
+            /* Animación de aparición gradual para el contenido */
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+<!-- BARRA DE NAVEGACIÓN PRINCIPAL -->
+<!-- Mantengo la navegación estándar del sitio para que el usuario pueda moverse libremente -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <!-- Logo y enlace principal del sitio -->
+        <a class="navbar-brand" href="/">Task Manager</a>
+
+        <!-- Botón hamburguesa para dispositivos móviles -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Menú de navegación expandible -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- Enlaces principales del sitio -->
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tasks">Mis Tareas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users/catalog">Usuarios</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/maps">Maps</a>
+                </li>
+                <!-- Menú Premium activo para mostrar que ya tiene acceso -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown">
+                        Premium
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/subscription/plans">Ver Planes</a></li>
+                        <li><a class="dropdown-item" href="/subscription/manage">Mi Suscripción</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <!-- Información del usuario logueado -->
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <!-- Muestro el username del usuario actual -->
+                        <span th:text="${currentUser.username}">Usuario</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/logout">Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- CONTENIDO PRINCIPAL DE LA PÁGINA -->
+<div class="container">
+    <div class="success-container">
+        <div class="row justify-content-center w-100">
+            <div class="col-md-8 col-lg-6">
+
+                <!-- TARJETA PRINCIPAL DE ÉXITO -->
+                <!-- Esta es la tarjeta principal que muestra el mensaje de confirmación -->
+                <div class="card success-card fade-in">
+
+                    <!-- CABECERA CON MENSAJE DE ÉXITO -->
+                    <div class="success-header text-white text-center">
+                        <!-- Icono grande de éxito con animación -->
+                        <div class="success-icon mb-3">✓</div>
+                        <h1 class="h2 mb-2">¡Pago Completado!</h1>
+                        <p class="lead mb-0">Tu suscripción Premium se ha activado correctamente</p>
+                    </div>
+
+                    <!-- CUERPO DE LA TARJETA CON DETALLES -->
+                    <div class="card-body p-4">
+
+                        <!-- INFORMACIÓN DE LA TRANSACCIÓN -->
+                        <!-- Muestro los detalles del pago realizado para confirmación del usuario -->
+                        <div class="mb-4">
+                            <h5 class="mb-3">Detalles de tu Transacción</h5>
+
+                            <!-- Referencia de la transacción si está disponible -->
+                            <div th:if="${transactionRef}" class="mb-2">
+                                <strong>Referencia:</strong>
+                                <code th:text="${transactionRef}">TXN-123456</code>
+                            </div>
+
+                            <!-- Plan contratado con sus características -->
+                            <div th:if="${currentSubscription}" class="mb-2">
+                                <strong>Plan:</strong>
+                                <span th:text="${currentSubscription.subscriptionPlan.name}">Plan Premium</span>
+                            </div>
+
+                            <!-- Estado actual de la suscripción -->
+                            <div class="mb-2">
+                                <strong>Estado:</strong>
+                                <span class="badge bg-success">Activo</span>
+                            </div>
+
+                            <!-- Fecha de inicio de la suscripción -->
+                            <div th:if="${currentSubscription}" class="mb-2">
+                                <strong>Activo desde:</strong>
+                                <span th:text="${#temporals.format(currentSubscription.startDate, 'dd/MM/yyyy HH:mm')}">Ahora</span>
+                            </div>
+
+                            <!-- Fecha de próxima renovación si aplica -->
+                            <div th:if="${currentSubscription?.endDate}" class="mb-2">
+                                <strong>Próxima renovación:</strong>
+                                <span th:text="${#temporals.format(currentSubscription.endDate, 'dd/MM/yyyy')}">Próximo mes</span>
+                            </div>
+                        </div>
+
+                        <!-- CARACTERÍSTICAS DESBLOQUEADAS -->
+                        <!-- Lista de beneficios que ahora tiene disponibles -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Funcionalidades Desbloqueadas</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">✓ Tareas ilimitadas</li>
+                                <li class="mb-2">✓ Ubicaciones ilimitadas</li>
+                                <li class="mb-2">✓ Estadísticas avanzadas</li>
+                                <li class="mb-2">✓ Soporte prioritario</li>
+                                <li class="mb-2">✓ Experiencia sin anuncios</li>
+                            </ul>
+                        </div>
+
+                        <!-- MENSAJE DE AGRADECIMIENTO -->
+                        <div class="alert alert-info">
+                            <h6>¡Gracias por confiar en nosotros!</h6>
+                            <p class="mb-0">
+                                Ahora puedes disfrutar de todas las funcionalidades Premium.
+                                Si tienes alguna pregunta, nuestro equipo de soporte está aquí para ayudarte.
+                            </p>
+                        </div>
+
+                        <!-- BOTONES DE ACCIÓN -->
+                        <!-- Proporciono opciones claras para que el usuario continúe su experiencia -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <!-- Botón principal para ir al dashboard -->
+                            <a href="/" class="btn btn-primary btn-lg">
+                                Ir al Dashboard
+                            </a>
+
+                            <!-- Botón secundario para gestionar la suscripción -->
+                            <a href="/subscription/manage" class="btn btn-outline-secondary btn-lg">
+                                Gestionar Suscripción
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INFORMACIÓN ADICIONAL -->
+                <!-- Tarjeta secundaria con información útil para el usuario -->
+                <div class="card mt-4 fade-in">
+                    <div class="card-body">
+                        <h6 class="card-title">Información Importante</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Facturación</h6>
+                                <ul class="small mb-3">
+                                    <li>Renovación automática mensual</li>
+                                    <li>Puedes cancelar cuando quieras</li>
+                                    <li>Sin penalizaciones por cancelación</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Soporte</h6>
+                                <ul class="small mb-0">
+                                    <li>Atención prioritaria 24/7</li>
+                                    <li>Acceso a funciones beta</li>
+                                    <li>Respuesta en menos de 2 horas</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS NECESARIOS -->
+<!-- Cargo Bootstrap JavaScript para funcionalidad interactiva -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- SCRIPT PERSONALIZADO PARA EFECTOS ADICIONALES -->
+<script>
+    /**
+     * JAVASCRIPT PARA MEJORAR LA EXPERIENCIA DE USUARIO
+     * Añado efectos visuales y funcionalidad adicional a la página de éxito
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // Efecto confetti simulado con setTimeout
+        // Creo una sensación de celebración para el usuario
+        setTimeout(function() {
+            console.log('🎉 ¡Suscripción Premium activada exitosamente!');
+        }, 500);
+
+        // Auto-redirect opcional al dashboard después de un tiempo
+        // Descomento esta línea si quiero redirección automática
+        // setTimeout(() => window.location.href = '/', 10000);
+
+        // Animación adicional para elementos que aparecen tarde
+        setTimeout(function() {
+            const cards = document.querySelectorAll('.fade-in');
+            cards.forEach((card, index) => {
+                // Añado un ligero delay escalonado para cada tarjeta
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        }, 100);
+    });
+</script>
+</body>
+</html>

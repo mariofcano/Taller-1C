@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Task Manager</title>
+    <!-- BOOTSTRAP PARA EL DISEÑO -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ICONOS DE BOOTSTRAP -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- MI CSS PERSONALIZADO -->
+    <link th:href="@{/css/public-styles.css}" rel="stylesheet">
+    <style>
+        .card-input {
+            border: 2px solid #e9ecef;
+            transition: border-color 0.3s ease;
+        }
+        .card-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .card-input.is-valid {
+            border-color: #28a745;
+        }
+        .card-input.is-invalid {
+            border-color: #dc3545;
+        }
+        .card-preview {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .card-number-preview {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+        .security-badge {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        .test-cards {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+    </style>
+</head>
+<body>
+<!-- BARRA DE NAVEGACIÓN -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-check-circle-fill me-2"></i>Task Manager
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tasks">Mis Tareas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users/catalog">Usuarios</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/maps">Maps</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-star-fill"></i> Premium
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/subscription/plans">Ver Planes</a></li>
+                        <li><a class="dropdown-item" href="/subscription/manage">Mi Suscripción</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <span th:text="${currentUser.username}">Usuario</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/logout">Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- BREADCRUMB -->
+<div class="container mt-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/subscription/plans">Planes</a></li>
+            <li class="breadcrumb-item active">Checkout</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <!-- RESUMEN DEL PLAN -->
+        <div class="col-lg-4 order-lg-2 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cart-check"></i>
+                        Resumen del Pedido
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-1" th:text="${selectedPlan.name}">Plan Premium</h6>
+                            <small class="text-muted" th:text="${selectedPlan.description}">Plan completo</small>
+                        </div>
+                        <span class="badge bg-success">
+                            <i class="bi bi-star-fill"></i>
+                        </span>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <h6>Características incluidas:</h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="bi bi-check text-success me-2"></i>Tareas ilimitadas</li>
+                            <li><i class="bi bi-check text-success me-2"></i>Ubicaciones ilimitadas</li>
+                            <li><i class="bi bi-check text-success me-2"></i>Estadísticas avanzadas</li>
+                            <li><i class="bi bi-check text-success me-2"></i>Soporte prioritario</li>
+                            <li><i class="bi bi-check text-success me-2"></i>Sin anuncios</li>
+                        </ul>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between">
+                        <span>Subtotal:</span>
+                        <span th:text="'€' + ${selectedPlan.price}">€9.99</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>IVA (21%):</span>
+                        <span th:text="'€' + ${#numbers.formatDecimal(selectedPlan.price * 0.21, 1, 2)}">€2.10</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between h5">
+                        <strong>Total:</strong>
+                        <strong th:text="'€' + ${#numbers.formatDecimal(selectedPlan.price * 1.21, 1, 2)}">€12.09</strong>
+                    </div>
+
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        <small>Facturación mensual. Puedes cancelar cuando quieras.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TARJETAS DE PRUEBA -->
+            <div class="test-cards mt-4">
+                <h6><i class="bi bi-credit-card text-primary"></i> Tarjetas de Prueba</h6>
+                <small class="text-muted">Usa estos números para probar el sistema:</small>
+                <div class="mt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <code class="text-primary">4111 1111 1111 1111</code>
+                        <span class="badge bg-success">✓ Aprueba</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <code class="text-danger">4000 0000 0000 0002</code>
+                        <span class="badge bg-danger">✗ Rechaza</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <code class="text-warning">4000 0000 0000 0259</code>
+                        <span class="badge bg-warning">⏳ Lento</span>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="loadTestCardsBtn">
+                    Ver Más Tarjetas
+                </button>
+            </div>
+        </div>
+
+        <!-- FORMULARIO DE PAGO -->
+        <div class="col-lg-8 order-lg-1">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-credit-card-2-front"></i>
+                        Información de Pago
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- VISTA PREVIA DE TARJETA -->
+                    <div class="card-preview" id="cardPreview">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <i class="bi bi-credit-card" style="font-size: 2rem;"></i>
+                            </div>
+                            <div id="cardTypeIcon">
+                                <i class="bi bi-credit-card-2-front" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="card-number-preview" id="cardNumberPreview">
+                                •••• •••• •••• ••••
+                            </div>
+                            <div class="d-flex justify-content-between mt-3">
+                                <div>
+                                    <small class="text-uppercase">Titular</small>
+                                    <div id="cardHolderPreview">NOMBRE COMPLETO</div>
+                                </div>
+                                <div>
+                                    <small class="text-uppercase">Expira</small>
+                                    <div id="cardExpiryPreview">MM/AA</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FORMULARIO DE PAGO -->
+                    <form action="/payment/process" method="post" id="paymentForm" novalidate>
+                        <input type="hidden" name="planId" th:value="${selectedPlan.id}">
+
+                        <!-- NÚMERO DE TARJETA -->
+                        <div class="mb-3">
+                            <label for="cardNumber" class="form-label fw-bold">
+                                <i class="bi bi-credit-card text-primary"></i>
+                                Número de Tarjeta *
+                            </label>
+                            <input type="text"
+                                   class="form-control form-control-lg card-input"
+                                   id="cardNumber"
+                                   name="cardNumber"
+                                   placeholder="1234 5678 9012 3456"
+                                   maxlength="19"
+                                   required>
+                            <div class="invalid-feedback"></div>
+                            <div class="valid-feedback">
+                                <i class="bi bi-check-circle"></i> Número válido
+                            </div>
+                        </div>
+
+                        <!-- FECHA DE EXPIRACIÓN -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="expiryMonth" class="form-label fw-bold">
+                                    <i class="bi bi-calendar-date text-primary"></i>
+                                    Mes de Expiración *
+                                </label>
+                                <select class="form-select form-select-lg card-input"
+                                        id="expiryMonth"
+                                        name="expiryMonth"
+                                        required>
+                                    <option value="">Mes</option>
+                                    <option value="01">01 - Enero</option>
+                                    <option value="02">02 - Febrero</option>
+                                    <option value="03">03 - Marzo</option>
+                                    <option value="04">04 - Abril</option>
+                                    <option value="05">05 - Mayo</option>
+                                    <option value="06">06 - Junio</option>
+                                    <option value="07">07 - Julio</option>
+                                    <option value="08">08 - Agosto</option>
+                                    <option value="09">09 - Septiembre</option>
+                                    <option value="10">10 - Octubre</option>
+                                    <option value="11">11 - Noviembre</option>
+                                    <option value="12">12 - Diciembre</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="expiryYear" class="form-label fw-bold">
+                                    <i class="bi bi-calendar-date text-primary"></i>
+                                    Año de Expiración *
+                                </label>
+                                <select class="form-select form-select-lg card-input"
+                                        id="expiryYear"
+                                        name="expiryYear"
+                                        required>
+                                    <option value="">Año</option>
+                                    <!-- AÑOS GENERADOS DINÁMICAMENTE -->
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <!-- CVV -->
+                        <div class="mb-3">
+                            <label for="cvv" class="form-label fw-bold">
+                                <i class="bi bi-shield-check text-primary"></i>
+                                Código de Seguridad (CVV) *
+                            </label>
+                            <input type="text"
+                                   class="form-control form-control-lg card-input"
+                                   id="cvv"
+                                   name="cvv"
+                                   placeholder="123"
+                                   maxlength="4"
+                                   required>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                3 dígitos en el reverso de la tarjeta (4 para American Express)
+                            </div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- NOMBRE DEL TITULAR -->
+                        <div class="mb-4">
+                            <label for="cardHolderName" class="form-label fw-bold">
+                                <i class="bi bi-person text-primary"></i>
+                                Nombre del Titular *
+                            </label>
+                            <input type="text"
+                                   class="form-control form-control-lg card-input"
+                                   id="cardHolderName"
+                                   name="cardHolderName"
+                                   th:value="${currentUser.username}"
+                                   placeholder="Nombre completo como aparece en la tarjeta"
+                                   maxlength="50"
+                                   required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- TÉRMINOS Y CONDICIONES -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="termsAccepted" required>
+                                <label class="form-check-label" for="termsAccepted">
+                                    Acepto los <a href="#" class="text-primary">términos y condiciones</a>
+                                    y la <a href="#" class="text-primary">política de privacidad</a> *
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- BOTONES -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                            <a href="/subscription/plans" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-arrow-left"></i> Volver a Planes
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg" id="submitPaymentBtn">
+                                <i class="bi bi-lock-fill"></i>
+                                <span id="submitText">Procesar Pago Seguro</span>
+                                <span id="submitSpinner" class="d-none">
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    Procesando...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- INFORMACIÓN DE SEGURIDAD -->
+                    <div class="security-badge text-center">
+                        <div class="d-flex justify-content-center align-items-center">
+                            <i class="bi bi-shield-fill-check text-success me-2"></i>
+                            <small>
+                                <strong>Pago 100% Seguro</strong><br>
+                                Encriptación SSL de 256 bits
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PARA TARJETAS DE PRUEBA -->
+<div class="modal fade" id="testCardsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-credit-card text-primary"></i>
+                    Tarjetas de Prueba
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Utiliza estas tarjetas para probar diferentes escenarios de pago:</p>
+                <div id="testCardsContainer">
+                    <!-- CONTENIDO CARGADO VÍA AJAX -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS DE BOOTSTRAP -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- SCRIPT PERSONALIZADO -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('paymentForm');
+        const cardNumberInput = document.getElementById('cardNumber');
+        const expiryMonthInput = document.getElementById('expiryMonth');
+        const expiryYearInput = document.getElementById('expiryYear');
+        const cvvInput = document.getElementById('cvv');
+        const cardHolderInput = document.getElementById('cardHolderName');
+        const submitBtn = document.getElementById('submitPaymentBtn');
+
+        // GENERAR AÑOS PARA EL SELECT
+        const currentYear = new Date().getFullYear();
+        const yearSelect = document.getElementById('expiryYear');
+        for (let i = 0; i < 15; i++) {
+            const year = currentYear + i;
+            const option = document.createElement('option');
+            option.value = year.toString().substr(-2);
+            option.textContent = year;
+            yearSelect.appendChild(option);
+        }
+
+        // FORMATEO AUTOMÁTICO DEL NÚMERO DE TARJETA
+        cardNumberInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.replace(/(.{4})/g, '$1 ').trim();
+
+            if (formattedValue.length > 19) {
+                formattedValue = formattedValue.substr(0, 19);
+            }
+
+            e.target.value = formattedValue;
+            updateCardPreview();
+            validateCardNumber();
+        });
+
+        // VALIDACIÓN EN TIEMPO REAL
+        cardNumberInput.addEventListener('blur', validateCardNumber);
+        cvvInput.addEventListener('input', validateCVV);
+        cardHolderInput.addEventListener('input', updateCardPreview);
+        expiryMonthInput.addEventListener('change', updateCardPreview);
+        expiryYearInput.addEventListener('change', updateCardPreview);
+
+        function validateCardNumber() {
+            const number = cardNumberInput.value.replace(/\s/g, '');
+            const isValid = isValidCreditCard(number);
+
+            if (number.length === 0) {
+                resetValidation(cardNumberInput);
+            } else if (isValid) {
+                setValid(cardNumberInput);
+            } else {
+                setInvalid(cardNumberInput, 'Número de tarjeta inválido');
+            }
+        }
+
+        function validateCVV() {
+            const cvv = cvvInput.value;
+            const cardType = getCardType(cardNumberInput.value.replace(/\s/g, ''));
+            const expectedLength = cardType === 'AMEX' ? 4 : 3;
+
+            if (cvv.length === 0) {
+                resetValidation(cvvInput);
+            } else if (cvv.length === expectedLength && /^\d+$/.test(cvv)) {
+                setValid(cvvInput);
+            } else {
+                setInvalid(cvvInput, `CVV debe tener ${expectedLength} dígitos`);
+            }
+        }
+
+        function updateCardPreview() {
+            const number = cardNumberInput.value || '•••• •••• •••• ••••';
+            const holder = cardHolderInput.value.toUpperCase() || 'NOMBRE COMPLETO';
+            const month = expiryMonthInput.value || 'MM';
+            const year = expiryYearInput.value || 'AA';
+
+            document.getElementById('cardNumberPreview').textContent = number;
+            document.getElementById('cardHolderPreview').textContent = holder;
+            document.getElementById('cardExpiryPreview').textContent = `${month}/${year}`;
+
+            // ACTUALIZAR ICONO DEL TIPO DE TARJETA
+            const cardType = getCardType(cardNumberInput.value.replace(/\s/g, ''));
+            updateCardTypeIcon(cardType);
+        }
+
+        function getCardType(number) {
+            if (number.startsWith('4')) return 'VISA';
+            if (number.startsWith('5') || number.startsWith('2')) return 'MASTERCARD';
+            if (number.startsWith('3')) return 'AMEX';
+            return 'UNKNOWN';
+        }
+
+        function updateCardTypeIcon(cardType) {
+            const iconElement = document.getElementById('cardTypeIcon');
+            let iconClass = 'bi-credit-card-2-front';
+
+            switch(cardType) {
+                case 'VISA':
+                    iconClass = 'bi-credit-card';
+                    break;
+                case 'MASTERCARD':
+                    iconClass = 'bi-credit-card-fill';
+                    break;
+                case 'AMEX':
+                    iconClass = 'bi-credit-card-2-back';
+                    break;
+            }
+
+            iconElement.innerHTML = `<i class="bi ${iconClass}" style="font-size: 1.5rem;"></i>`;
+        }
+
+        // ALGORITMO LUHN PARA VALIDACIÓN
+        function isValidCreditCard(number) {
+            if (!/^\d{13,19}$/.test(number)) return false;
+
+            let sum = 0;
+            let alternate = false;
+
+            for (let i = number.length - 1; i >= 0; i--) {
+                let digit = parseInt(number.charAt(i));
+
+                if (alternate) {
+                    digit *= 2;
+                    if (digit > 9) digit = (digit % 10) + 1;
+                }
+
+                sum += digit;
+                alternate = !alternate;
+            }
+
+            return sum % 10 === 0;
+        }
+
+        function setValid(input) {
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+        }
+
+        function setInvalid(input, message) {
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            const feedback = input.parentNode.querySelector('.invalid-feedback');
+            if (feedback) feedback.textContent = message;
+        }
+
+        function resetValidation(input) {
+            input.classList.remove('is-valid', 'is-invalid');
+        }
+
+        // ENVÍO DEL FORMULARIO
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                return false;
+            }
+
+            // MOSTRAR LOADING
+            const submitText = document.getElementById('submitText');
+            const submitSpinner = document.getElementById('submitSpinner');
+
+            submitText.classList.add('d-none');
+            submitSpinner.classList.remove('d-none');
+            submitBtn.disabled = true;
+
+            // ENVIAR FORMULARIO DESPUÉS DE 1 SEGUNDO (UX)
+            setTimeout(() => {
+                form.submit();
+            }, 1000);
+        });
+
+        function validateForm() {
+            let isValid = true;
+
+            // VALIDAR TODOS LOS CAMPOS
+            if (!isValidCreditCard(cardNumberInput.value.replace(/\s/g, ''))) {
+                setInvalid(cardNumberInput, 'Número de tarjeta inválido');
+                isValid = false;
+            }
+
+            if (!expiryMonthInput.value) {
+                setInvalid(expiryMonthInput, 'Selecciona el mes');
+                isValid = false;
+            }
+
+            if (!expiryYearInput.value) {
+                setInvalid(expiryYearInput, 'Selecciona el año');
+                isValid = false;
+            }
+
+            if (!cvvInput.value || !/^\d{3,4}$/.test(cvvInput.value)) {
+                setInvalid(cvvInput, 'CVV inválido');
+                isValid = false;
+            }
+
+            if (!cardHolderInput.value.trim()) {
+                setInvalid(cardHolderInput, 'Nombre del titular requerido');
+                isValid = false;
+            }
+
+            if (!document.getElementById('termsAccepted').checked) {
+                alert('Debes aceptar los términos y condiciones');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // CARGAR TARJETAS DE PRUEBA
+        document.getElementById('loadTestCardsBtn').addEventListener('click', function() {
+            fetch('/payment/test-cards')
+                .then(response => response.json())
+                .then(cards => {
+                    const container = document.getElementById('testCardsContainer');
+                    container.innerHTML = '';
+
+                    Object.entries(cards).forEach(([number, description]) => {
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = 'card mb-2';
+                        cardDiv.innerHTML = `
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <code class="text-primary">${number}</code>
+                                        <br><small class="text-muted">${description}</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary use-card-btn"
+                                            data-number="${number}">
+                                        Usar
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(cardDiv);
+                    });
+
+                    // EVENTOS PARA USAR TARJETAS
+                    container.querySelectorAll('.use-card-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const number = this.dataset.number;
+                            cardNumberInput.value = number.replace(/(.{4})/g, '$1 ').trim();
+                            updateCardPreview();
+                            validateCardNumber();
+
+                            // CERRAR MODAL
+                            bootstrap.Modal.getInstance(document.getElementById('testCardsModal')).hide();
+                        });
+                    });
+
+                    // MOSTRAR MODAL
+                    new bootstrap.Modal(document.getElementById('testCardsModal')).show();
+                })
+                .catch(error => console.error('Error cargando tarjetas:', error));
+        });
+
+        // INICIALIZAR VISTA PREVIA
+        updateCardPreview();
+    });
+</script>
+</body>
+</html>
