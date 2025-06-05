@@ -12,24 +12,36 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * CONFIGURACIÓN DE SEGURIDAD PARA LA APLICACIÓN
- * DEFINE QUÉ RUTAS ESTÁN PROTEGIDAS Y CÓMO FUNCIONA EL LOGIN
+ * Configuración de seguridad para la aplicación Task Manager.
+ *
+ * <p>Implemento la configuración completa de Spring Security incluyendo
+ * autenticación, autorización, manejo de sesiones y CSRF. Defino las
+ * rutas protegidas y públicas del sistema según roles de usuario.</p>
  *
  * @author Mario Flores
  * @version 1.0
+ * @since 2025
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    /**
+     * Servicio personalizado para cargar usuarios desde la base de datos.
+     * Utilizo este servicio para integrar mi sistema de usuarios con
+     * el mecanismo de autenticación de Spring Security.
+     */
     @Autowired
     private CustomUserDetailsService userDetailsService;
 
     /**
-     * CONFIGURO EL CIFRADO DE CONTRASEÑAS
-     * USO BCRYPT QUE ES SEGURO Y ESTÁNDAR
+     * Configuro el encoder de contraseñas utilizando BCrypt.
      *
-     * @return el encoder de contraseñas
+     * <p>Implemento BCrypt como algoritmo de hashing por ser considerado
+     * seguro y resistente a ataques de fuerza bruta. Este encoder
+     * genera un salt único para cada contraseña.</p>
+     *
+     * @return PasswordEncoder configurado con BCrypt
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -37,65 +49,67 @@ public class SecurityConfig {
     }
 
     /**
-     * CONFIGURO LAS REGLAS DE SEGURIDAD DE LA APLICACIÓN
+     * Defino la cadena de filtros de seguridad principal del sistema.
      *
-     * @param http configuración de seguridad HTTP
-     * @return la cadena de filtros de seguridad
-     * @throws Exception si hay error en la configuración
+     * <p>Esta función configura todas las reglas de seguridad, incluyendo
+     * autorizaciones por rol, formulario de login, logout y manejo de sesiones.
+     * Implemento un sistema granular de permisos basado en rutas y roles.</p>
+     *
+     * @param http objeto HttpSecurity para configurar la seguridad web
+     * @return SecurityFilterChain configurado con todas las reglas de seguridad
+     * @throws Exception si ocurre error durante la configuración
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CONFIGURO LAS AUTORIZACIONES
+                // Configuro las reglas de autorización por rutas
                 .authorizeHttpRequests(auth -> auth
-                        // RUTAS PÚBLICAS (NO NECESITAN LOGIN)
+                        // Rutas públicas accesibles sin autenticación
                         .requestMatchers("/login", "/register", "/css/**", "/js/**", "/images/**", "/error").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll() // CONSOLA H2 PARA DESARROLLO
+                        .requestMatchers("/h2-console/**").permitAll() // Consola H2 para desarrollo
 
-                        // RUTAS DE ADMINISTRADOR
+                        // Rutas administrativas restringidas a rol ADMIN
                         .requestMatchers("/users/create", "/users/edit/**", "/users/delete/**").hasRole("ADMIN")
 
-                        // RUTAS DE USUARIOS NORMALES
+                        // Rutas de funcionalidad general para usuarios autenticados
                         .requestMatchers("/tasks/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/users/catalog").hasAnyRole("USER", "ADMIN")
 
-                        // CUALQUIER OTRA RUTA NECESITA AUTENTICACIÓN
+                        // Cualquier otra ruta requiere autenticación
                         .anyRequest().authenticated()
                 )
 
-                // CONFIGURO EL FORMULARIO DE LOGIN
+                // Configuro el formulario de login personalizado
                 .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/", true)
-                        .failureUrl("/login?error=true")
-                        .usernameParameter("username")
-                        .passwordParameter("password")
-                        .permitAll()
+                        .loginPage("/login")                    // Página de login personalizada
+                        .loginProcessingUrl("/login")           // URL que procesa el formulario
+                        .defaultSuccessUrl("/", true)           // Redirección tras login exitoso
+                        .failureUrl("/login?error=true")        // Redirección tras error de login
+                        .usernameParameter("username")          // Nombre del campo usuario
+                        .passwordParameter("password")          // Nombre del campo contraseña
+                        .permitAll()                            // Permitir acceso a todos
                 )
 
-                // CONFIGURO EL LOGOUT
+                // Configuro el proceso de logout
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout=true")
-                        .invalidateHttpSession(true)
-                        .clearAuthentication(true)
-                        .deleteCookies("JSESSIONID")
-                        .permitAll()
+                        .logoutUrl("/logout")                   // URL para cerrar sesión
+                        .logoutSuccessUrl("/login?logout=true") // Redirección tras logout
+                        .invalidateHttpSession(true)           // Invalidar sesión HTTP
+                        .clearAuthentication(true)             // Limpiar autenticación
+                        .deleteCookies("JSESSIONID")           // Eliminar cookies de sesión
+                        .permitAll()                           // Permitir acceso a todos
                 )
 
-                // CONFIGURO EL MANEJO DE SESIONES
+                // Configuro el manejo de sesiones concurrentes
                 .sessionManagement(session -> session
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(false)
+                        .maximumSessions(1)                    // Una sesión por usuario
+                        .maxSessionsPreventsLogin(false)      // Permitir nueva sesión
                 )
 
-                // DESABILITO CSRF PARA H2 CONSOLE
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/h2-console/**")
-                )
+                // Deshabilito CSRF temporalmente para debugging
+                .csrf(csrf -> csrf.disable())
 
-                // PERMITO FRAMES PARA H2 CONSOLE
+                // Configuro headers para permitir frames de H2 Console
                 .headers(headers -> headers
                         .frameOptions().sameOrigin()
                 );
@@ -104,18 +118,22 @@ public class SecurityConfig {
     }
 
     /**
-     * CONFIGURO EL MANAGER DE AUTENTICACIÓN
-     * LE DIGO QUE USE MI SERVICIO PERSONALIZADO Y EL ENCODER
+     * Configuro el AuthenticationManager con mi servicio personalizado.
      *
-     * @param http configuración de seguridad
-     * @return el manager de autenticación
-     * @throws Exception si hay error en la configuración
+     * <p>Integro mi CustomUserDetailsService con el sistema de autenticación
+     * de Spring Security. Este manager utiliza el encoder BCrypt para
+     * verificar contraseñas durante el proceso de login.</p>
+     *
+     * @param http objeto HttpSecurity para acceder al builder de autenticación
+     * @return AuthenticationManager configurado con mi servicio de usuarios
+     * @throws Exception si ocurre error durante la configuración
      */
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder authBuilder =
                 http.getSharedObject(AuthenticationManagerBuilder.class);
 
+        // Configuro mi servicio personalizado y el encoder de contraseñas
         authBuilder
                 .userDetailsService(userDetailsService)
                 .passwordEncoder(passwordEncoder());

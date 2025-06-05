@@ -56,7 +56,7 @@ public class UserController {
     public String showCreateForm(Model model) {
         model.addAttribute("user", new User());
         model.addAttribute("roles", UserRole.values());
-        return "users/register";
+        return "users/create";
     }
 
     /**
