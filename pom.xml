@@ -14,11 +14,11 @@
     </parent>
 
     <!-- CONFIGURACION BASICA DEL PROYECTO -->
-    <groupId>com.biblioteca</groupId>
-    <artifactId>biblioteca-digital</artifactId>
+    <groupId>com.taskmanager</groupId>
+    <artifactId>TaskManagerApplication</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>biblioteca-digital</name>
-    <description>Sistema de Gestión de Biblioteca Digital</description>
+    <name>task-manager</name>
+    <description>Sistema de gestion de tareas</description>
 
     <!-- VERSION DE JAVA QUE USAREMOS -->
     <properties>

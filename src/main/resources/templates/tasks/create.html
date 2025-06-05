@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Tarea - Task Manager</title>
+    <!-- BOOTSTRAP PARA EL DISEÑO -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ICONOS DE BOOTSTRAP -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- MI CSS PERSONALIZADO -->
+    <link th:href="@{/css/public-styles.css}" rel="stylesheet">
+</head>
+<body>
+<!-- BARRA DE NAVEGACIÓN -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-check-circle-fill me-2"></i>Task Manager
+        </a>
+
+        <!-- BOTÓN PARA MÓVILES -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- MENÚ DE NAVEGACIÓN -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tasks">Mis Tareas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users/catalog">Usuarios</a>
+                </li>
+            </ul>
+
+            <!-- MENÚ DE USUARIO -->
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i> Mi Cuenta
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/logout">Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container mt-4">
+
+    <!-- BREADCRUMB -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/tasks">Mis Tareas</a></li>
+            <li class="breadcrumb-item active">Nueva Tarea</li>
+        </ol>
+    </nav>
+
+    <!-- ENCABEZADO -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">
+                <i class="bi bi-plus-circle text-success"></i>
+                Crear Nueva Tarea
+            </h1>
+            <p class="text-muted">Completa los campos para crear una nueva tarea en tu lista personal.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/tasks" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a Mis Tareas
+            </a>
+        </div>
+    </div>
+
+    <!-- FORMULARIO DE CREACIÓN -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-file-earmark-plus"></i>
+                        Datos de la Nueva Tarea
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    <!-- FORMULARIO -->
+                    <form action="/tasks/create" method="post" novalidate>
+
+                        <!-- CAMPO TÍTULO -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label fw-bold">
+                                <i class="bi bi-card-text text-primary"></i>
+                                Título de la Tarea *
+                            </label>
+                            <input type="text"
+                                   class="form-control form-control-lg"
+                                   id="title"
+                                   name="title"
+                                   placeholder="Ej: Estudiar para el examen de matemáticas"
+                                   required
+                                   maxlength="100">
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                El título debe ser claro y descriptivo (máximo 100 caracteres)
+                            </div>
+                        </div>
+
+                        <!-- CAMPO DESCRIPCIÓN -->
+                        <div class="mb-4">
+                            <label for="description" class="form-label fw-bold">
+                                <i class="bi bi-card-list text-primary"></i>
+                                Descripción
+                            </label>
+                            <textarea class="form-control"
+                                      id="description"
+                                      name="description"
+                                      rows="4"
+                                      placeholder="Describe los detalles de tu tarea..."
+                                      maxlength="500"></textarea>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Añade detalles adicionales sobre la tarea (máximo 500 caracteres)
+                            </div>
+                        </div>
+
+                        <!-- INFORMACIÓN ADICIONAL -->
+                        <div class="alert alert-info d-flex align-items-center" role="alert">
+                            <i class="bi bi-lightbulb-fill me-2"></i>
+                            <div>
+                                <strong>Tip:</strong> Las tareas nuevas se crean como "pendientes" por defecto.
+                                Podrás marcarlas como completadas desde la lista de tareas.
+                            </div>
+                        </div>
+
+                        <!-- BOTONES -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/tasks" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-x-circle"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-plus-circle"></i>
+                                Crear Tarea
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONSEJOS ADICIONALES -->
+    <div class="row mt-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-question-circle text-info"></i>
+                        Consejos para crear buenas tareas
+                    </h6>
+                    <ul class="mb-0">
+                        <li>Usa títulos específicos y accionables</li>
+                        <li>Incluye fechas límite o contexto en la descripción</li>
+                        <li>Divide tareas grandes en subtareas más pequeñas</li>
+                        <li>Revisa y actualiza tus tareas regularmente</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS DE BOOTSTRAP -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- SCRIPT PARA VALIDACIÓN DEL FORMULARIO -->
+<script>
+    // VALIDACIÓN BÁSICA DEL FORMULARIO
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const titleInput = document.getElementById('title');
+        const descriptionInput = document.getElementById('description');
+
+        // VALIDACIÓN EN TIEMPO REAL
+        titleInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            if (value.length < 3) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        // CONTADOR DE CARACTERES
+        const titleCounter = document.createElement('div');
+        titleCounter.className = 'form-text text-end';
+        titleInput.parentNode.appendChild(titleCounter);
+
+        const descCounter = document.createElement('div');
+        descCounter.className = 'form-text text-end';
+        descriptionInput.parentNode.appendChild(descCounter);
+
+        function updateCounters() {
+            titleCounter.textContent = `${titleInput.value.length}/100 caracteres`;
+            descCounter.textContent = `${descriptionInput.value.length}/500 caracteres`;
+        }
+
+        titleInput.addEventListener('input', updateCounters);
+        descriptionInput.addEventListener('input', updateCounters);
+        updateCounters();
+
+        // VALIDACIÓN AL ENVIAR
+        form.addEventListener('submit', function(e) {
+            const title = titleInput.value.trim();
+
+            if (title.length < 3) {
+                e.preventDefault();
+                titleInput.focus();
+                alert('El título debe tener al menos 3 caracteres');
+                return false;
+            }
+
+            // MOSTRAR LOADING
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando...';
+            submitBtn.disabled = true;
+        });
+    });
+</script>
+</body>
+</html>
