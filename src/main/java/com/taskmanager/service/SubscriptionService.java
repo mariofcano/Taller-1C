@@ -215,8 +215,8 @@ public class SubscriptionService {
             return true;
         }
 
-        // VERIFICAR LÍMITE
-        long currentTasks = taskRepository.countByUser(user);
+// VERIFICAR LÍMITE
+        long currentTasks = taskRepository.countPendingTasksByUser(user) + taskRepository.countCompletedTasksByUser(user);
         return currentTasks < plan.getMaxTasks();
     }
 
@@ -264,7 +264,7 @@ public class SubscriptionService {
             return -1; // Ilimitado
         }
 
-        long currentTasks = taskRepository.countByUser(user);
+        long currentTasks = taskRepository.countPendingTasksByUser(user) + taskRepository.countCompletedTasksByUser(user);
         return Math.max(0, plan.getMaxTasks() - (int)currentTasks);
     }
 
@@ -305,7 +305,7 @@ public class SubscriptionService {
         }
 
         SubscriptionPlan plan = subscription.getSubscriptionPlan();
-        long currentTasks = taskRepository.countByUser(user);
+        long currentTasks = taskRepository.countPendingTasksByUser(user) + taskRepository.countCompletedTasksByUser(user);
         long currentLocations = taskLocationRepository.countActiveLocationsByUser(user);
 
         return new SubscriptionUsageStats(

@@ -11,8 +11,7 @@ import java.util.Optional;
 
 /**
  * SERVICIO QUE MANEJA TODA LA LÓGICA DE NEGOCIO DE LAS UBICACIONES DE TAREAS
- * PROPORCIONA MÉTODOS PARA CREAR, LEER, ACTUALIZAR Y ELIMINAR UBICACIONES
- * INCLUYE VALIDACIONES Y OPERACIONES ESPECIALIZADAS
+ * INCLUYE VALIDACIONES DE LÍMITES SEGÚN EL PLAN DE SUSCRIPCIÓN
  *
  * @author Mario Flores
  * @version 1.0
@@ -22,6 +21,9 @@ public class TaskLocationService {
 
     @Autowired
     private TaskLocationRepository taskLocationRepository;
+
+    @Autowired
+    private SubscriptionService subscriptionService;
 
     /**
      * OBTENGO TODAS LAS UBICACIONES DE UN USUARIO ESPECÍFICO
@@ -69,7 +71,7 @@ public class TaskLocationService {
 
     /**
      * CREO UNA NUEVA UBICACIÓN CON LOS DATOS BÁSICOS
-     * INCLUYE VALIDACIONES DE COORDENADAS Y DUPLICADOS
+     * INCLUYE VALIDACIONES DE COORDENADAS, DUPLICADOS Y LÍMITES DEL PLAN
      *
      * @param name nombre descriptivo de la ubicación
      * @param description descripción adicional opcional
@@ -79,12 +81,12 @@ public class TaskLocationService {
      * @param user usuario propietario de la ubicación
      * @return la ubicación creada
      * @throws IllegalArgumentException si las coordenadas son inválidas
-     * @throws RuntimeException si ya existe una ubicación en esas coordenadas
+     * @throws RuntimeException si ya existe una ubicación en esas coordenadas o se excede el límite
      */
     public TaskLocation createLocation(String name, String description, Double latitude,
                                        Double longitude, String address, User user) {
 
-        // VALIDO QUE LAS COORDENADAS ESTÉN EN RANGOS VÁLIDOS
+        // VALIDACIONES BÁSICAS DE COORDENADAS
         if (!isValidLatitude(latitude)) {
             throw new IllegalArgumentException("Latitud debe estar entre -90.0 y 90.0");
         }
@@ -93,12 +95,27 @@ public class TaskLocationService {
             throw new IllegalArgumentException("Longitud debe estar entre -180.0 y 180.0");
         }
 
+        // VALIDACIÓN DE LÍMITES DEL PLAN DE SUSCRIPCIÓN
+        if (!subscriptionService.canCreateMoreLocations(user)) {
+            // OBTENGO INFORMACIÓN DEL LÍMITE PARA EL MENSAJE DE ERROR
+            SubscriptionService.SubscriptionUsageStats stats = subscriptionService.getUserUsageStats(user);
+
+            String errorMessage = String.format(
+                    "Has alcanzado el límite de ubicaciones de tu plan (%d/%d). " +
+                            "Upgrade a Premium para crear ubicaciones ilimitadas.",
+                    stats.getCurrentLocations(),
+                    stats.getMaxLocations()
+            );
+
+            throw new RuntimeException(errorMessage);
+        }
+
         // VERIFICO QUE NO EXISTA YA UNA UBICACIÓN EN ESAS COORDENADAS EXACTAS
         if (taskLocationRepository.existsByCoordinatesAndUser(latitude, longitude, user)) {
             throw new RuntimeException("Ya existe una ubicación en estas coordenadas");
         }
 
-        // CREO LA NUEVA UBICACIÓN
+        // SI PASA TODAS LAS VALIDACIONES, CREAR LA UBICACIÓN
         TaskLocation location = new TaskLocation(name, description, latitude, longitude, user);
         location.setAddress(address);
 
@@ -291,6 +308,28 @@ public class TaskLocationService {
      */
     public List<TaskLocation> getRecentLocations(User user) {
         return taskLocationRepository.findTop5ByUserOrderByCreatedAtDesc(user);
+    }
+
+    /**
+     * VERIFICO SI UN USUARIO PUEDE CREAR MÁS UBICACIONES
+     * MÉTODO DE CONVENIENCIA QUE DELEGA AL SUBSCRIPTION SERVICE
+     *
+     * @param user el usuario a verificar
+     * @return true si puede crear más ubicaciones, false si ya alcanzó el límite
+     */
+    public boolean canUserCreateMoreLocations(User user) {
+        return subscriptionService.canCreateMoreLocations(user);
+    }
+
+    /**
+     * OBTENGO INFORMACIÓN SOBRE LOS LÍMITES DE UBICACIONES DEL USUARIO
+     * ÚTIL PARA MOSTRAR EN LA UI
+     *
+     * @param user el usuario
+     * @return estadísticas de uso de ubicaciones
+     */
+    public SubscriptionService.SubscriptionUsageStats getLocationUsageStats(User user) {
+        return subscriptionService.getUserUsageStats(user);
     }
 
     // MÉTODOS PRIVADOS DE VALIDACIÓN

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Pagos - Task Manager</title>
+    <!-- BOOTSTRAP PARA EL DISEÑO -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ICONOS DE BOOTSTRAP -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- MI CSS PERSONALIZADO -->
+    <link th:href="@{/css/public-styles.css}" rel="stylesheet">
+    <style>
+        .transaction-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .transaction-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .transaction-card.success {
+            border-left-color: #28a745;
+            background: linear-gradient(90deg, rgba(40,167,69,0.05) 0%, rgba(255,255,255,1) 20%);
+        }
+
+        .transaction-card.failed {
+            border-left-color: #dc3545;
+            background: linear-gradient(90deg, rgba(220,53,69,0.05) 0%, rgba(255,255,255,1) 20%);
+        }
+
+        .transaction-card.pending {
+            border-left-color: #ffc107;
+            background: linear-gradient(90deg, rgba(255,193,7,0.05) 0%, rgba(255,255,255,1) 20%);
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+
+        .filter-pills .nav-link {
+            border-radius: 20px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .filter-pills .nav-link.active {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .amount-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .amount-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .timeline-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .timeline-success { background-color: #28a745; }
+        .timeline-failed { background-color: #dc3545; }
+        .timeline-pending { background-color: #ffc107; }
+        .timeline-processing { background-color: #17a2b8; }
+
+        .payment-method-icon {
+            width: 40px;
+            height: 25px;
+            background: linear-gradient(45deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            padding: 80px 20px;
+            text-align: center;
+            color: #6c757d;
+        }
+
+        .search-highlight {
+            background-color: yellow;
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+<!-- BARRA DE NAVEGACIÓN -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-check-circle-fill me-2"></i>Task Manager
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tasks">Mis Tareas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users/catalog">Usuarios</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/maps">Maps</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-star-fill"></i> Premium
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/subscription/plans">Ver Planes</a></li>
+                        <li><a class="dropdown-item" href="/subscription/manage">Mi Suscripción</a></li>
+                        <li><a class="dropdown-item active" href="/payment/history">Historial de Pagos</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <span th:text="${currentUser.username}">Usuario</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/logout">Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- BREADCRUMB -->
+<div class="container mt-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/subscription/plans">Premium</a></li>
+            <li class="breadcrumb-item active">Historial de Pagos</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container mt-4 mb-5">
+    <!-- ENCABEZADO Y ESTADÍSTICAS -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">
+                <i class="bi bi-receipt text-primary"></i>
+                Historial de Pagos
+            </h1>
+            <p class="text-muted">Gestiona y revisa todas tus transacciones realizadas</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/subscription/plans" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Plan
+            </a>
+        </div>
+    </div>
+
+    <!-- ESTADÍSTICAS PRINCIPALES -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-receipt-cutoff display-4 mb-2"></i>
+                    <h3 th:text="${totalTransactions}">0</h3>
+                    <p class="mb-0">Total Transacciones</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle-fill display-4 mb-2"></i>
+                    <h3 th:text="${successfulPayments}">0</h3>
+                    <p class="mb-0">Pagos Exitosos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle-fill display-4 mb-2"></i>
+                    <h3 th:text="${failedPayments}">0</h3>
+                    <p class="mb-0">Pagos Fallidos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-graph-up display-4 mb-2"></i>
+                    <h3>
+                        <span th:if="${totalTransactions > 0}"
+                              th:text="${#numbers.formatDecimal(successfulPayments * 100.0 / totalTransactions, 1, 0)}">0</span>
+                        <span th:if="${totalTransactions == 0}">0</span>%
+                    </h3>
+                    <p class="mb-0">Tasa de Éxito</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTROS Y BÚSQUEDA -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <!-- FILTROS POR PILLS -->
+            <ul class="nav nav-pills filter-pills">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/payment/history" id="filter-all">
+                        <i class="bi bi-list"></i> Todas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/payment/history?status=COMPLETED" id="filter-success">
+                        <i class="bi bi-check-circle"></i> Exitosos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/payment/history?status=FAILED" id="filter-failed">
+                        <i class="bi bi-x-circle"></i> Fallidos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/payment/history?status=PENDING" id="filter-pending">
+                        <i class="bi bi-clock"></i> Pendientes
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="col-md-4">
+            <!-- BÚSQUEDA -->
+            <form action="/payment/history" method="get" class="d-flex">
+                <input type="text"
+                       name="search"
+                       class="form-control me-2"
+                       placeholder="Buscar por referencia..."
+                       th:value="${searchQuery}">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- LISTA DE TRANSACCIONES -->
+    <div class="row">
+        <div class="col-12">
+            <!-- ESTADO VACÍO -->
+            <div th:if="${#lists.isEmpty(transactions)}" class="empty-state">
+                <i class="bi bi-receipt display-1"></i>
+                <h3 class="mt-3">No hay transacciones</h3>
+                <p>Aún no has realizado ningún pago. ¡Suscríbete a Premium para empezar!</p>
+                <a href="/subscription/plans" class="btn btn-primary">
+                    <i class="bi bi-star"></i> Ver Planes Premium
+                </a>
+            </div>
+
+            <!-- LISTA DE TRANSACCIONES -->
+            <div th:if="${not #lists.isEmpty(transactions)}">
+                <div th:each="transaction : ${transactions}" class="mb-3">
+                    <div class="card transaction-card"
+                         th:classappend="${transaction.successful} ? 'success' : (${transaction.failed} ? 'failed' : 'pending')">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <!-- INDICADOR DE ESTADO Y FECHA -->
+                                <div class="col-md-2">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="timeline-indicator"
+                                             th:classappend="${transaction.status.name()} == 'COMPLETED' ? 'timeline-success' :
+                                                           (${transaction.status.name()} == 'FAILED' or ${transaction.status.name()} == 'REJECTED' ? 'timeline-failed' :
+                                                           (${transaction.status.name()} == 'PROCESSING' ? 'timeline-processing' : 'timeline-pending'))">
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold" th:text="${transaction.status.displayName}">Estado</div>
+                                            <small class="text-muted"
+                                                   th:text="${#temporals.format(transaction.transactionDate, 'dd/MM/yyyy HH:mm')}">
+                                                Fecha
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- INFORMACIÓN DEL PAGO -->
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="payment-method-icon me-3">
+                                            <span th:switch="${transaction.paymentMethod}">
+                                                <span th:case="'VISA'">VISA</span>
+                                                <span th:case="'MASTERCARD'">MC</span>
+                                                <span th:case="'AMERICAN_EXPRESS'">AMEX</span>
+                                                <span th:case="*">CARD</span>
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold" th:text="${transaction.subscriptionPlan.name}">Plan Premium</div>
+                                            <small class="text-muted">
+                                                •••• <span th:text="${transaction.cardLastDigits}">1234</span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- REFERENCIA -->
+                                <div class="col-md-3">
+                                    <div>
+                                        <small class="text-muted">Referencia:</small>
+                                        <div>
+                                            <code class="text-primary" th:text="${transaction.referenceCode}">TXN-123456</code>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- MONTO Y ACCIONES -->
+                                <div class="col-md-3 text-end">
+                                    <div class="mb-2">
+                                        <span class="h5"
+                                              th:classappend="${transaction.successful} ? 'amount-positive' : 'amount-negative'"
+                                              th:text="${transaction.formattedAmount}">
+                                            €9.99
+                                        </span>
+                                    </div>
+
+                                    <!-- BOTONES DE ACCIÓN -->
+                                    <div class="btn-group btn-group-sm">
+                                        <!-- VER DETALLES -->
+                                        <button type="button"
+                                                class="btn btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                th:data-bs-target="'#detailModal-' + ${transaction.id}"
+                                                title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+
+                                        <!-- DESCARGAR RECIBO (SOLO EXITOSOS) -->
+                                        <button th:if="${transaction.successful}"
+                                                type="button"
+                                                class="btn btn-outline-success"
+                                                th:onclick="'downloadReceipt(\'' + ${transaction.referenceCode} + '\')'"
+                                                title="Descargar recibo">
+                                            <i class="bi bi-download"></i>
+                                        </button>
+
+                                        <!-- REINTENTAR (SOLO FALLIDOS) -->
+                                        <a th:if="${transaction.failed}"
+                                           th:href="@{/subscription/checkout/{id}(id=${transaction.subscriptionPlan.id})}"
+                                           class="btn btn-outline-warning"
+                                           title="Reintentar pago">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- MENSAJE DE ERROR (SI EXISTE) -->
+                            <div th:if="${transaction.errorMessage}" class="mt-2">
+                                <div class="alert alert-danger py-2 mb-0">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>Error:</strong> <span th:text="${transaction.errorMessage}">Error message</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGINACIÓN (SI ES NECESARIA) -->
+                <div class="d-flex justify-content-center mt-4">
+                    <nav aria-label="Navegación de páginas">
+                        <!-- Aquí puedes agregar paginación si tienes muchas transacciones -->
+                        <small class="text-muted">
+                            Mostrando <span th:text="${#lists.size(transactions)}">0</span> transacciones
+                        </small>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALES PARA DETALLES DE TRANSACCIONES -->
+<div th:each="transaction : ${transactions}">
+    <div class="modal fade" th:id="'detailModal-' + ${transaction.id}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"
+                     th:classappend="${transaction.successful} ? 'bg-success text-white' :
+                                    (${transaction.failed} ? 'bg-danger text-white' : 'bg-warning text-dark')">
+                    <h5 class="modal-title">
+                        <i th:class="${transaction.status.icon}" class="me-2"></i>
+                        Detalles de la Transacción
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            th:class="${transaction.successful or transaction.failed} ? 'btn-close-white' : 'btn-close'"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- INFORMACIÓN BÁSICA -->
+                        <div class="col-md-6">
+                            <h6>Información de la Transacción</h6>
+                            <table class="table table-borderless table-sm">
+                                <tr>
+                                    <td><strong>Referencia:</strong></td>
+                                    <td><code th:text="${transaction.referenceCode}">TXN-123456</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado:</strong></td>
+                                    <td>
+                                        <span class="badge"
+                                              th:classappend="${transaction.status.cssClass}"
+                                              th:text="${transaction.status.displayName}">
+                                            Estado
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fecha:</strong></td>
+                                    <td th:text="${#temporals.format(transaction.transactionDate, 'dd/MM/yyyy HH:mm:ss')}">
+                                        Fecha completa
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Monto:</strong></td>
+                                    <td>
+                                        <span class="fw-bold" th:text="${transaction.formattedAmount}">€9.99</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Método:</strong></td>
+                                    <td th:text="${transaction.paymentMethod}">VISA</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- INFORMACIÓN DEL PLAN -->
+                        <div class="col-md-6">
+                            <h6>Plan Contratado</h6>
+                            <table class="table table-borderless table-sm">
+                                <tr>
+                                    <td><strong>Plan:</strong></td>
+                                    <td th:text="${transaction.subscriptionPlan.name}">Plan Premium</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Descripción:</strong></td>
+                                    <td th:text="${transaction.subscriptionPlan.description}">Descripción del plan</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tarjeta:</strong></td>
+                                    <td>
+                                        •••• <span th:text="${transaction.cardLastDigits}">1234</span>
+                                    </td>
+                                </tr>
+                                <tr th:if="${transaction.transactionData}">
+                                    <td><strong>Datos Adicionales:</strong></td>
+                                    <td>
+                                        <small class="text-muted" th:text="${transaction.transactionData}">
+                                            Información adicional
+                                        </small>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- MENSAJE DE ERROR DETALLADO -->
+                    <div th:if="${transaction.errorMessage}" class="mt-3">
+                        <h6>Información del Error</h6>
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span th:text="${transaction.errorMessage}">Mensaje de error detallado</span>
+                        </div>
+                    </div>
+
+                    <!-- TIMELINE DEL PROCESAMIENTO -->
+                    <div class="mt-3">
+                        <h6>Estado del Procesamiento</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="timeline-indicator timeline-success"></div>
+                            <span>Datos enviados correctamente</span>
+                        </div>
+                        <div class="d-flex align-items-center mt-2">
+                            <div class="timeline-indicator"
+                                 th:classappend="${transaction.status.name()} != 'PENDING' ? 'timeline-success' : 'timeline-pending'">
+                            </div>
+                            <span>Verificación con el banco</span>
+                        </div>
+                        <div class="d-flex align-items-center mt-2">
+                            <div class="timeline-indicator"
+                                 th:classappend="${transaction.successful} ? 'timeline-success' :
+                                                (${transaction.failed} ? 'timeline-failed' : 'timeline-pending')">
+                            </div>
+                            <span th:text="${transaction.successful} ? 'Pago completado exitosamente' :
+                                          (${transaction.failed} ? 'Pago falló' : 'Procesamiento en curso')">
+                                Estado final
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cerrar
+                    </button>
+
+                    <!-- BOTONES ESPECÍFICOS SEGÚN ESTADO -->
+                    <div th:if="${transaction.successful}">
+                        <button type="button"
+                                class="btn btn-success"
+                                th:onclick="'downloadReceipt(\'' + ${transaction.referenceCode} + '\')'">
+                            <i class="bi bi-download"></i> Descargar Recibo
+                        </button>
+                    </div>
+
+                    <div th:if="${transaction.failed}">
+                        <a th:href="@{/subscription/checkout/{id}(id=${transaction.subscriptionPlan.id})}"
+                           class="btn btn-warning">
+                            <i class="bi bi-arrow-repeat"></i> Reintentar Pago
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS DE BOOTSTRAP -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- SCRIPT PERSONALIZADO -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // FUNCIÓN PARA DESCARGAR RECIBOS
+        window.downloadReceipt = function(referenceCode) {
+            // Simular descarga de recibo
+            const content = generateReceiptContent(referenceCode);
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `recibo-${referenceCode}.txt`;
+            document.body.appendChild(a);
+            a.click();
+
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            // Mostrar notificación
+            showNotification('Recibo descargado correctamente', 'success');
+        };
+
+        // GENERAR CONTENIDO DEL RECIBO
+        function generateReceiptContent(referenceCode) {
+            const fecha = new Date().toLocaleString('es-ES');
+            return `
+===========================================
+           TASK MANAGER - RECIBO
+===========================================
+
+Referencia: ${referenceCode}
+Fecha: ${fecha}
+Cliente: ${document.querySelector('[th\\:text="${currentUser.username}"]')?.textContent || 'Usuario'}
+
+-------------------------------------------
+DETALLES DEL PAGO
+-------------------------------------------
+Plan: Premium
+Precio: €9.99 EUR
+IVA (21%): €2.10 EUR
+Total: €12.09 EUR
+
+Estado: COMPLETADO ✓
+
+-------------------------------------------
+INFORMACIÓN ADICIONAL
+-------------------------------------------
+• Suscripción mensual renovable
+• Funcionalidades premium incluidas
+• Soporte prioritario 24/7
+• Sin permanencia
+
+===========================================
+           Gracias por tu compra
+===========================================
+
+Este recibo es válido como comprobante
+de pago para efectos fiscales.
+
+Contacto: soporte@taskmanager.com
+Web: https://taskmanager.com
+            `.trim();
+        }
+
+        // SISTEMA DE NOTIFICACIONES
+        function showNotification(message, type = 'info') {
+            // Crear elemento de notificación
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+
+            notification.innerHTML = `
+                <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // MANEJO DE FILTROS ACTIVOS
+        const currentUrl = new URL(window.location.href);
+        const statusParam = currentUrl.searchParams.get('status');
+
+        // Actualizar filtros activos
+        document.querySelectorAll('.filter-pills .nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+
+        if (statusParam) {
+            const activeFilter = document.getElementById(`filter-${statusParam.toLowerCase()}`);
+            if (activeFilter) {
+                activeFilter.classList.add('active');
+            }
+        } else {
+            document.getElementById('filter-all').classList.add('active');
+        }
+
+        // FUNCIONALIDAD DE BÚSQUEDA EN TIEMPO REAL
+        const searchInput = document.querySelector('input[name="search"]');
+        let searchTimeout;
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    highlightSearchResults(this.value);
+                }, 300);
+            });
+        }
+
+        // RESALTAR RESULTADOS DE BÚSQUEDA
+        function highlightSearchResults(searchTerm) {
+            if (!searchTerm.trim()) {
+                // Remover highlights existentes
+                document.querySelectorAll('.search-highlight').forEach(el => {
+                    el.outerHTML = el.innerHTML;
+                });
+                return;
+            }
+
+            const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+
+            document.querySelectorAll('.transaction-card code').forEach(codeEl => {
+                const originalText = codeEl.textContent;
+                if (originalText.toLowerCase().includes(searchTerm.toLowerCase())) {
+                    codeEl.innerHTML = originalText.replace(regex, '<span class="search-highlight">$1</span>');
+                }
+            });
+        }
+
+        // ESCAPAR REGEX
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\                    <h3 th:text="${totalTransactions}">0</h3>
+                    <p class="mb-0">Total Transacciones</p>
+                </div>
+            ');
+        }
+
+        // ANIMACIONES DE ENTRADA
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Aplicar animaciones a las tarjetas de transacciones
+        document.querySelectorAll('.transaction-card').forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+
+            observer.observe(card);
+        });
+
+        // REFRESH AUTOMÁTICO PARA TRANSACCIONES PENDIENTES
+        const hasPendingTransactions = document.querySelector('.timeline-pending') !== null;
+
+        if (hasPendingTransactions) {
+            console.log('Detectadas transacciones pendientes, habilitando refresh automático');
+
+            // Refresh cada 30 segundos si hay transacciones pendientes
+            setInterval(() => {
+                if (document.hasFocus()) {
+                    window.location.reload();
+                }
+            }, 30000);
+
+            // Mostrar indicador de refresh
+            const refreshIndicator = document.createElement('div');
+            refreshIndicator.className = 'position-fixed bottom-0 end-0 m-3 text-muted small';
+            refreshIndicator.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Auto-actualización activa';
+            document.body.appendChild(refreshIndicator);
+        }
+    });
+</script>
+</body>
+</html>

@@ -11,6 +11,7 @@ import java.util.Optional;
 
 /**
  * SERVICIO QUE MANEJA TODA LA LÓGICA DE NEGOCIO DE LAS TAREAS
+ * INCLUYE VALIDACIONES DE LÍMITES SEGÚN EL PLAN DE SUSCRIPCIÓN
  *
  * @author Mario Flores
  * @version 1.0
@@ -20,6 +21,9 @@ public class TaskService {
 
     @Autowired
     private TaskRepository taskRepository;
+
+    @Autowired
+    private SubscriptionService subscriptionService;
 
     /**
      * OBTENGO TODAS LAS TAREAS DE UN USUARIO
@@ -50,22 +54,41 @@ public class TaskService {
 
     /**
      * CREO UNA TAREA NUEVA CON LOS DATOS BÁSICOS
+     * INCLUYE VALIDACIÓN DE LÍMITES SEGÚN EL PLAN DE SUSCRIPCIÓN
+     *
      * @param title título de la tarea
      * @param description descripción
      * @param user usuario propietario
      * @return la tarea creada
+     * @throws IllegalArgumentException si los datos son inválidos
+     * @throws RuntimeException si se excede el límite del plan
      */
     public Task createTask(String title, String description, User user) {
-        // Valido que el título no sea null ni esté vacío
+        // VALIDACIONES BÁSICAS
         if (title == null || title.trim().isEmpty()) {
             throw new IllegalArgumentException("El título de la tarea no puede estar vacío");
         }
 
-        // Valido que el usuario no sea null
         if (user == null) {
             throw new IllegalArgumentException("El usuario propietario es obligatorio");
         }
 
+        // VALIDACIÓN DE LÍMITES DEL PLAN DE SUSCRIPCIÓN
+        if (!subscriptionService.canCreateMoreTasks(user)) {
+            // OBTENGO INFORMACIÓN DEL LÍMITE PARA EL MENSAJE DE ERROR
+            SubscriptionService.SubscriptionUsageStats stats = subscriptionService.getUserUsageStats(user);
+
+            String errorMessage = String.format(
+                    "Has alcanzado el límite de tareas de tu plan (%d/%d). " +
+                            "Upgrade a Premium para crear tareas ilimitadas.",
+                    stats.getCurrentTasks(),
+                    stats.getMaxTasks()
+            );
+
+            throw new RuntimeException(errorMessage);
+        }
+
+        // SI PASA TODAS LAS VALIDACIONES, CREAR LA TAREA
         Task task = new Task(title, description, user);
         return taskRepository.save(task);
     }
@@ -172,5 +195,27 @@ public class TaskService {
      */
     public List<Task> getRecentTasks(User user) {
         return taskRepository.findTop5ByUserOrderByCreatedAtDesc(user);
+    }
+
+    /**
+     * VERIFICO SI UN USUARIO PUEDE CREAR MÁS TAREAS
+     * MÉTODO DE CONVENIENCIA QUE DELEGA AL SUBSCRIPTION SERVICE
+     *
+     * @param user el usuario a verificar
+     * @return true si puede crear más tareas, false si ya alcanzó el límite
+     */
+    public boolean canUserCreateMoreTasks(User user) {
+        return subscriptionService.canCreateMoreTasks(user);
+    }
+
+    /**
+     * OBTENGO INFORMACIÓN SOBRE LOS LÍMITES DE TAREAS DEL USUARIO
+     * ÚTIL PARA MOSTRAR EN LA UI
+     *
+     * @param user el usuario
+     * @return estadísticas de uso de tareas
+     */
+    public SubscriptionService.SubscriptionUsageStats getTaskUsageStats(User user) {
+        return subscriptionService.getUserUsageStats(user);
     }
 }
