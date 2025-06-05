@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Ubicación - Task Manager</title>
+    <!-- BOOTSTRAP PARA EL DISEÑO -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ICONOS DE BOOTSTRAP -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- MI CSS PERSONALIZADO -->
+    <link th:href="@{/css/public-styles.css}" rel="stylesheet">
+</head>
+<body>
+<!-- BARRA DE NAVEGACIÓN -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-check-circle-fill me-2"></i>Task Manager
+        </a>
+
+        <!-- BOTÓN PARA MÓVILES -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- MENÚ DE NAVEGACIÓN -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tasks">Mis Tareas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users/catalog">Usuarios</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/maps">Maps</a>
+                </li>
+            </ul>
+
+            <!-- MENÚ DE USUARIO -->
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <span th:text="${currentUser.username}">Usuario</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/logout">Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container mt-4">
+
+    <!-- BREADCRUMB -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/maps">Maps</a></li>
+            <li class="breadcrumb-item active">Editar Ubicación</li>
+        </ol>
+    </nav>
+
+    <!-- ENCABEZADO -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">
+                <i class="bi bi-pencil-square text-warning"></i>
+                Editar Ubicación
+            </h1>
+            <p class="text-muted">Modifica los datos de la ubicación o cambia su posición en el mapa.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/maps" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a Maps
+            </a>
+        </div>
+    </div>
+
+    <!-- MAPA INTERACTIVO CON UBICACIÓN ACTUAL -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        Ubicación Actual
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <!-- CONTENEDOR DEL MAPA INTERACTIVO -->
+                    <div id="map" style="height: 350px; width: 100%;"></div>
+                </div>
+                <div class="card-footer text-muted small">
+                    <i class="bi bi-info-circle"></i>
+                    Haz clic en el mapa para cambiar la ubicación o arrastra el marcador a una nueva posición.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORMULARIO DE EDICIÓN -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-file-earmark-text"></i>
+                        Modificar Datos de la Ubicación
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    <!-- INFORMACIÓN DE LA UBICACIÓN -->
+                    <div class="alert alert-light d-flex align-items-center mb-4" role="alert">
+                        <i class="bi bi-info-circle text-primary me-2"></i>
+                        <div>
+                            <strong>Creada el:</strong>
+                            <span th:text="${#temporals.format(location.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+                            <br>
+                            <strong>Estado actual:</strong>
+                            <span th:if="${location.active}" class="badge bg-success">Activa</span>
+                            <span th:if="${!location.active}" class="badge bg-warning">Inactiva</span>
+                        </div>
+                    </div>
+
+                    <!-- FORMULARIO -->
+                    <form th:action="@{/maps/edit/{id}(id=${location.id})}" method="post" novalidate>
+
+                        <!-- CAMPO NOMBRE -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold">
+                                <i class="bi bi-card-text text-primary"></i>
+                                Nombre de la Ubicación *
+                            </label>
+                            <input type="text"
+                                   class="form-control form-control-lg"
+                                   id="name"
+                                   name="name"
+                                   th:value="${location.name}"
+                                   required
+                                   maxlength="100">
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Nombre descriptivo para identificar fácilmente la ubicación
+                            </div>
+                        </div>
+
+                        <!-- CAMPO DESCRIPCIÓN -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label fw-bold">
+                                <i class="bi bi-card-list text-primary"></i>
+                                Descripción
+                            </label>
+                            <textarea class="form-control"
+                                      id="description"
+                                      name="description"
+                                      rows="3"
+                                      maxlength="500"
+                                      th:text="${location.description}"></textarea>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Información adicional sobre la ubicación
+                            </div>
+                        </div>
+
+                        <!-- COORDENADAS GPS -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="latitude" class="form-label fw-bold">
+                                    <i class="bi bi-compass text-primary"></i>
+                                    Latitud *
+                                </label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="latitude"
+                                       name="latitude"
+                                       step="any"
+                                       th:value="${location.latitude}"
+                                       required
+                                       readonly>
+                                <div class="form-text">
+                                    Coordenada Y (Norte-Sur)
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="longitude" class="form-label fw-bold">
+                                    <i class="bi bi-compass text-primary"></i>
+                                    Longitud *
+                                </label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="longitude"
+                                       name="longitude"
+                                       step="any"
+                                       th:value="${location.longitude}"
+                                       required
+                                       readonly>
+                                <div class="form-text">
+                                    Coordenada X (Este-Oeste)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DIRECCIÓN FÍSICA -->
+                        <div class="mb-3">
+                            <label for="address" class="form-label fw-bold">
+                                <i class="bi bi-house text-primary"></i>
+                                Dirección Física
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="address"
+                                   name="address"
+                                   th:value="${location.address}"
+                                   maxlength="200">
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Dirección postal o referencia física
+                            </div>
+                        </div>
+
+                        <!-- ESTADO DE LA UBICACIÓN -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-toggle-on text-success"></i>
+                                Estado de la Ubicación
+                            </label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="active"
+                                       name="active"
+                                       th:checked="${location.active}">
+                                <label class="form-check-label" for="active">
+                                    <span id="statusText"
+                                          th:text="${location.active} ? 'Ubicación activa' : 'Ubicación inactiva'"
+                                          th:class="${location.active} ? 'text-success fw-bold' : 'text-warning fw-bold'">
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Las ubicaciones inactivas no se muestran en los mapas principales
+                            </div>
+                        </div>
+
+                        <!-- VISTA PREVIA DEL ESTADO -->
+                        <div class="alert" id="previewAlert"
+                             th:class="${location.active} ? 'alert-success' : 'alert-warning'">
+                            <div class="d-flex align-items-center">
+                                <i id="previewIcon"
+                                   th:class="${location.active} ? 'bi bi-check-circle-fill text-success' : 'bi bi-pause-circle-fill text-warning'"
+                                   class="me-2"></i>
+                                <div>
+                                    <strong>Vista previa:</strong>
+                                    <span id="previewText"
+                                          th:text="${location.active} ? 'Esta ubicación aparecerá en los mapas' : 'Esta ubicación estará oculta en los mapas'">
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BOTONES -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/maps" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-x-circle"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg" id="submitBtn">
+                                <i class="bi bi-check-circle"></i>
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACCIONES ADICIONALES -->
+    <div class="row mt-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title text-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Zona de Peligro
+                    </h6>
+                    <p class="mb-2">Si ya no necesitas esta ubicación, puedes eliminarla permanentemente.</p>
+                    <form th:action="@{/maps/delete/{id}(id=${location.id})}"
+                          method="post"
+                          style="display: inline;"
+                          onsubmit="return confirm('¿Estás completamente seguro de que quieres eliminar esta ubicación?\n\nEsta acción no se puede deshacer.')">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-trash"></i>
+                            Eliminar Ubicación
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS DE BOOTSTRAP -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- GOOGLE MAPS API -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBfUb_VQkqDF5KyApJyrvDPgU12_SSj49Y&callback=initMap"></script>
+<!-- SCRIPT PERSONALIZADO PARA EDICIÓN CON MAPA -->
+<script>
+    let map;
+    let marker;
+    let geocoder;
+
+    // DATOS INICIALES DE LA UBICACIÓN DESDE THYMELEAF
+    const currentLocation = {
+        id: /*[[${location.id}]]*/ 0,
+        name: /*[[${location.name}]]*/ '',
+        description: /*[[${location.description}]]*/ '',
+        latitude: /*[[${location.latitude}]]*/ 0,
+        longitude: /*[[${location.longitude}]]*/ 0,
+        active: /*[[${location.active}]]*/ true,
+        address: /*[[${location.address}]]*/ ''
+    };
+
+    // INICIALIZO EL MAPA CON LA UBICACIÓN ACTUAL
+    function initMap() {
+        // CENTRO EL MAPA EN LA UBICACIÓN EXISTENTE
+        const locationPosition = {
+            lat: currentLocation.latitude,
+            lng: currentLocation.longitude
+        };
+
+        // CREO EL MAPA CENTRADO EN LA UBICACIÓN
+        map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 15,
+            center: locationPosition,
+            mapTypeId: 'roadmap'
+        });
+
+        // INICIALIZO EL GEOCODER
+        geocoder = new google.maps.Geocoder();
+
+        // COLOCO EL MARCADOR EN LA POSICIÓN ACTUAL
+        placeMarkerAndSetCoordinates(locationPosition);
+
+        // CONFIGURO EL EVENTO DE CLICK EN EL MAPA
+        map.addListener('click', function(event) {
+            placeMarkerAndSetCoordinates(event.latLng);
+        });
+    }
+
+    // COLOCO EL MARCADOR Y ACTUALIZO COORDENADAS
+    function placeMarkerAndSetCoordinates(location) {
+        // ELIMINO EL MARCADOR ANTERIOR SI EXISTE
+        if (marker) {
+            marker.setMap(null);
+        }
+
+        // CREO EL MARCADOR CON ICONO ESPECIAL PARA EDICIÓN
+        marker = new google.maps.Marker({
+            position: location,
+            map: map,
+            title: currentLocation.name,
+            draggable: true,
+            icon: {
+                url: 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
+                scaledSize: new google.maps.Size(32, 32)
+            }
+        });
+
+        // ACTUALIZO LOS CAMPOS DEL FORMULARIO
+        updateCoordinateFields(location.lat, location.lng);
+
+        // OBTENGO LA DIRECCIÓN DE LAS NUEVAS COORDENADAS
+        reverseGeocode(location);
+
+        // CONFIGURO EL ARRASTRE DEL MARCADOR
+        marker.addListener('dragend', function(event) {
+            const newLocation = event.latLng;
+            updateCoordinateFields(newLocation.lat(), newLocation.lng());
+            reverseGeocode(newLocation);
+        });
+
+        // VENTANA DE INFORMACIÓN DEL MARCADOR
+        const infoContent = `
+            <div class="p-2">
+                <h6 class="mb-1">${currentLocation.name}</h6>
+                <p class="mb-1 text-muted small">Arrastra para cambiar posición</p>
+                <span class="badge ${currentLocation.active ? 'bg-success' : 'bg-warning'}">
+                    ${currentLocation.active ? 'Activa' : 'Inactiva'}
+                </span>
+            </div>
+        `;
+
+        const infoWindow = new google.maps.InfoWindow({
+            content: infoContent
+        });
+
+        marker.addListener('click', function() {
+            infoWindow.open(map, marker);
+        });
+    }
+
+    // ACTUALIZO LOS CAMPOS DE COORDENADAS
+    function updateCoordinateFields(lat, lng) {
+        document.getElementById('latitude').value = lat.toFixed(6);
+        document.getElementById('longitude').value = lng.toFixed(6);
+
+        // MARCO COMO MODIFICADOS
+        document.getElementById('latitude').classList.add('is-valid');
+        document.getElementById('longitude').classList.add('is-valid');
+    }
+
+    // GEOCODING INVERSO PARA OBTENER DIRECCIÓN
+    function reverseGeocode(location) {
+        geocoder.geocode({ 'location': location }, function(results, status) {
+            if (status === 'OK') {
+                if (results[0]) {
+                    // SUGIERO LA NUEVA DIRECCIÓN SI LA COORDENADA CAMBIÓ MUCHO
+                    const addressField = document.getElementById('address');
+                    const newAddress = results[0].formatted_address;
+
+                    // CALCULO LA DISTANCIA DEL CAMBIO
+                    const originalLat = currentLocation.latitude;
+                    const originalLng = currentLocation.longitude;
+                    const currentLat = location.lat;
+                    const currentLng = location.lng;
+
+                    const distance = calculateDistance(originalLat, originalLng, currentLat, currentLng);
+
+                    // SI SE MOVIÓ MÁS DE 100 METROS, SUGIERO NUEVA DIRECCIÓN
+                    if (distance > 0.1) {
+                        if (confirm('¿Quieres actualizar la dirección con la nueva ubicación?\n\n' + newAddress)) {
+                            addressField.value = newAddress;
+                            addressField.classList.add('is-valid');
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // CALCULO DISTANCIA ENTRE DOS PUNTOS GPS
+    function calculateDistance(lat1, lng1, lat2, lng2) {
+        const R = 6371; // Radio de la Tierra en km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLng/2) * Math.sin(dLng/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c; // Distancia en km
+    }
+
+    // EVENTOS DOM Y FUNCIONALIDAD INTERACTIVA
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const nameInput = document.getElementById('name');
+        const descriptionInput = document.getElementById('description');
+        const latitudeInput = document.getElementById('latitude');
+        const longitudeInput = document.getElementById('longitude');
+        const activeCheckbox = document.getElementById('active');
+        const statusText = document.getElementById('statusText');
+        const previewAlert = document.getElementById('previewAlert');
+        const previewIcon = document.getElementById('previewIcon');
+        const previewText = document.getElementById('previewText');
+
+        // FUNCIÓN PARA ACTUALIZAR LA VISTA PREVIA DEL ESTADO
+        function updateStatusPreview() {
+            if (activeCheckbox.checked) {
+                statusText.textContent = 'Ubicación activa';
+                statusText.className = 'text-success fw-bold';
+                previewAlert.className = 'alert alert-success';
+                previewIcon.className = 'bi bi-check-circle-fill text-success me-2';
+                previewText.textContent = 'Esta ubicación aparecerá en los mapas';
+            } else {
+                statusText.textContent = 'Ubicación inactiva';
+                statusText.className = 'text-warning fw-bold';
+                previewAlert.className = 'alert alert-warning';
+                previewIcon.className = 'bi bi-pause-circle-fill text-warning me-2';
+                previewText.textContent = 'Esta ubicación estará oculta en los mapas';
+            }
+        }
+
+        // ESCUCHO CAMBIOS EN EL CHECKBOX DE ESTADO
+        activeCheckbox.addEventListener('change', updateStatusPreview);
+
+        // VALIDACIÓN EN TIEMPO REAL
+        nameInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            if (value.length < 3) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        // CONTADORES DE CARACTERES
+        const nameCounter = document.createElement('div');
+        nameCounter.className = 'form-text text-end';
+        nameInput.parentNode.appendChild(nameCounter);
+
+        const descCounter = document.createElement('div');
+        descCounter.className = 'form-text text-end';
+        descriptionInput.parentNode.appendChild(descCounter);
+
+        function updateCounters() {
+            nameCounter.textContent = `${nameInput.value.length}/100 caracteres`;
+            descCounter.textContent = `${descriptionInput.value.length}/500 caracteres`;
+        }
+
+        nameInput.addEventListener('input', updateCounters);
+        descriptionInput.addEventListener('input', updateCounters);
+        updateCounters();
+
+        // PERMITIR EDICIÓN MANUAL DE COORDENADAS
+        latitudeInput.addEventListener('dblclick', function() {
+            this.readOnly = false;
+            this.focus();
+            this.select();
+        });
+
+        longitudeInput.addEventListener('dblclick', function() {
+            this.readOnly = false;
+            this.focus();
+            this.select();
+        });
+
+        // ACTUALIZAR MAPA CUANDO SE EDITEN COORDENADAS MANUALMENTE
+        function updateMapFromFields() {
+            const lat = parseFloat(latitudeInput.value);
+            const lng = parseFloat(longitudeInput.value);
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                const newLocation = { lat: lat, lng: lng };
+                placeMarkerAndSetCoordinates(newLocation);
+                map.setCenter(newLocation);
+            }
+        }
+
+        latitudeInput.addEventListener('blur', function() {
+            this.readOnly = true;
+            updateMapFromFields();
+        });
+
+        longitudeInput.addEventListener('blur', function() {
+            this.readOnly = true;
+            updateMapFromFields();
+        });
+
+        // VALIDACIÓN AL ENVIAR
+        form.addEventListener('submit', function(e) {
+            const name = nameInput.value.trim();
+            const latitude = parseFloat(latitudeInput.value);
+            const longitude = parseFloat(longitudeInput.value);
+
+            if (name.length < 3) {
+                e.preventDefault();
+                nameInput.focus();
+                alert('El nombre debe tener al menos 3 caracteres');
+                return false;
+            }
+
+            if (!latitude || !longitude) {
+                e.preventDefault();
+                alert('Las coordenadas son obligatorias');
+                return false;
+            }
+
+            if (latitude < -90 || latitude > 90) {
+                e.preventDefault();
+                alert('La latitud debe estar entre -90 y 90');
+                return false;
+            }
+
+            if (longitude < -180 || longitude > 180) {
+                e.preventDefault();
+                alert('La longitud debe estar entre -180 y 180');
+                return false;
+            }
+
+            // MOSTRAR LOADING
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+            submitBtn.disabled = true;
+        });
+    });
+</script>
+</body>
+</html>

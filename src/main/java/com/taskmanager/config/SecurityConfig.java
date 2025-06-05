@@ -74,6 +74,8 @@ public class SecurityConfig {
                         // Rutas de funcionalidad general para usuarios autenticados
                         .requestMatchers("/tasks/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/users/catalog").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/maps/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/locations/**").hasAnyRole("USER", "ADMIN")
 
                         // Cualquier otra ruta requiere autenticación
                         .anyRequest().authenticated()

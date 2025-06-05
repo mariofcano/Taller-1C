@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Ubicaciones - Task Manager</title>
+    <!-- BOOTSTRAP PARA EL DISEÑO -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ICONOS DE BOOTSTRAP -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- LEAFLET CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+<!-- BARRA DE NAVEGACIÓN -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-check-circle-fill me-2"></i>Task Manager
+        </a>
+
+        <!-- BOTÓN PARA MÓVILES -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- MENÚ DE NAVEGACIÓN -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tasks">Mis Tareas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users/catalog">Usuarios</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/maps">Maps</a>
+                </li>
+            </ul>
+
+            <!-- MENÚ DE USUARIO -->
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <span th:text="${currentUser.username}">Usuario</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/logout">Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container mt-4">
+
+    <!-- ENCABEZADO DE LA PÁGINA -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">
+                <i class="bi bi-geo-alt-fill text-danger"></i>
+                Mis Ubicaciones
+            </h1>
+
+            <!-- ESTADÍSTICAS RÁPIDAS -->
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h5 th:text="${activeCount}">0</h5>
+                            <small>Activas</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h5 th:text="${inactiveCount}">0</h5>
+                            <small>Inactivas</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h5 th:text="${totalCount}">0</h5>
+                            <small>Total</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTÓN PARA CREAR NUEVA UBICACIÓN -->
+        <div class="col-md-4 text-end">
+            <a href="/maps/create" class="btn btn-success btn-lg">
+                <i class="bi bi-plus-circle"></i> Nueva Ubicación
+            </a>
+        </div>
+    </div>
+
+    <!-- MENSAJES FLASH -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i>
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- BARRA DE BÚSQUEDA Y FILTROS -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <!-- FORMULARIO DE BÚSQUEDA -->
+            <form action="/maps/search" method="get" class="d-flex">
+                <input type="text" name="q" class="form-control me-2"
+                       placeholder="Buscar ubicaciones..." th:value="${searchQuery}">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
+
+        <div class="col-md-6">
+            <!-- FILTROS -->
+            <div class="btn-group" role="group">
+                <a href="/maps" class="btn btn-outline-secondary"
+                   th:classappend="${currentFilter == null or currentFilter == 'all'} ? 'active' : ''">
+                    Todas
+                </a>
+                <a href="/maps/filter?status=active" class="btn btn-outline-success"
+                   th:classappend="${currentFilter == 'active'} ? 'active' : ''">
+                    Activas
+                </a>
+                <a href="/maps/filter?status=inactive" class="btn btn-outline-warning"
+                   th:classappend="${currentFilter == 'inactive'} ? 'active' : ''">
+                    Inactivas
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAPA PRINCIPAL -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-map"></i>
+                        Mapa Interactivo
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <!-- CONTENEDOR DEL MAPA LEAFLET -->
+                    <div id="map" style="height: 400px; width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LISTA DE UBICACIONES -->
+    <div class="row">
+        <div class="col-12">
+            <!-- SI NO HAY UBICACIONES -->
+            <div th:if="${#lists.isEmpty(locations)}" class="text-center py-5">
+                <i class="bi bi-geo-alt display-1 text-muted"></i>
+                <h3 class="text-muted mt-3">No tienes ubicaciones</h3>
+                <p class="text-muted">¡Crea tu primera ubicación para empezar!</p>
+                <a href="/maps/create" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Crear Primera Ubicación
+                </a>
+            </div>
+
+            <!-- TABLA DE UBICACIONES -->
+            <div th:if="${not #lists.isEmpty(locations)}" class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i>
+                        Lista de Ubicaciones
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th width="5%">Estado</th>
+                                <th width="25%">Nombre</th>
+                                <th width="30%">Descripción</th>
+                                <th width="20%">Coordenadas</th>
+                                <th width="10%">Fecha</th>
+                                <th width="10%">Acciones</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!-- ITERO SOBRE CADA UBICACIÓN -->
+                            <tr th:each="location : ${locations}" th:class="${location.active} ? '' : 'table-warning'">
+
+                                <!-- INDICADOR DE ESTADO -->
+                                <td class="text-center">
+                                    <i th:class="${location.active} ? 'bi bi-check-circle-fill text-success' : 'bi bi-pause-circle-fill text-warning'"
+                                       th:title="${location.active} ? 'Ubicación activa' : 'Ubicación inactiva'"
+                                       style="font-size: 1.2rem;"></i>
+                                </td>
+
+                                <!-- NOMBRE DE LA UBICACIÓN -->
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-geo-alt-fill text-danger me-2"></i>
+                                        <span th:text="${location.name}" class="fw-bold"></span>
+                                    </div>
+                                </td>
+
+                                <!-- DESCRIPCIÓN -->
+                                <td>
+                                    <span th:text="${location.description}" class="text-muted"></span>
+                                </td>
+
+                                <!-- COORDENADAS GPS -->
+                                <td class="small text-muted">
+                                    <div>
+                                        <i class="bi bi-compass"></i>
+                                        <span th:text="${#numbers.formatDecimal(location.latitude, 1, 6)}"></span>,
+                                        <span th:text="${#numbers.formatDecimal(location.longitude, 1, 6)}"></span>
+                                    </div>
+                                    <div th:if="${location.address}" class="mt-1">
+                                        <i class="bi bi-house"></i>
+                                        <span th:text="${location.address}" class="small"></span>
+                                    </div>
+                                </td>
+
+                                <!-- FECHA DE CREACIÓN -->
+                                <td class="text-muted small">
+                                    <span th:text="${#temporals.format(location.createdAt, 'dd/MM/yyyy')}"></span>
+                                </td>
+
+                                <!-- BOTONES DE ACCIÓN -->
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <!-- BOTÓN VER EN MAPA -->
+                                        <button type="button"
+                                                class="btn btn-outline-info btn-sm show-on-map"
+                                                th:data-lat="${location.latitude}"
+                                                th:data-lng="${location.longitude}"
+                                                th:data-name="${location.name}"
+                                                title="Ver en mapa">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+
+                                        <!-- BOTÓN EDITAR -->
+                                        <a th:href="@{/maps/edit/{id}(id=${location.id})}"
+                                           class="btn btn-outline-primary btn-sm"
+                                           title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <!-- BOTÓN ACTIVAR/DESACTIVAR -->
+                                        <form th:action="@{/maps/toggle/{id}(id=${location.id})}"
+                                              method="post" style="display: inline;">
+                                            <button type="submit"
+                                                    th:class="${location.active} ? 'btn btn-outline-warning btn-sm' : 'btn btn-outline-success btn-sm'"
+                                                    th:title="${location.active} ? 'Desactivar' : 'Activar'">
+                                                <i th:class="${location.active} ? 'bi bi-pause' : 'bi bi-play'"></i>
+                                            </button>
+                                        </form>
+
+                                        <!-- BOTÓN ELIMINAR -->
+                                        <form th:action="@{/maps/delete/{id}(id=${location.id})}"
+                                              method="post" style="display: inline;"
+                                              onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta ubicación?')">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                    title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS DE BOOTSTRAP -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- LEAFLET JAVASCRIPT -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- SCRIPT PARA CARGAR UBICACIONES CON LEAFLET -->
+<script>
+    let map;
+    let markers = [];
+
+    // INICIALIZAR MAPA LEAFLET
+    function initMap() {
+        // CENTRO INICIAL DEL MAPA (MADRID, ESPAÑA)
+        map = L.map('map').setView([40.4168, -3.7038], 6);
+
+        // AGREGAR CAPA DE MAPA OPENSTREETMAP
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // CARGAR UBICACIONES USANDO LA API REST
+        loadLocationsFromAPI();
+    }
+
+    // CARGAR LAS UBICACIONES DESDE LA API REST
+    async function loadLocationsFromAPI() {
+        try {
+            const response = await fetch('/api/locations');
+            const locations = await response.json();
+
+            console.log('Ubicaciones cargadas:', locations);
+
+            if (locations.length > 0) {
+                // CREAR MARCADORES PARA CADA UBICACIÓN
+                locations.forEach(location => {
+                    createMarker(location);
+                });
+
+                // AJUSTAR EL ZOOM PARA MOSTRAR TODAS LAS UBICACIONES
+                fitMapToMarkers();
+            } else {
+                // SI NO HAY UBICACIONES, MOSTRAR MENSAJE
+                showNoLocationsMessage();
+            }
+        } catch (error) {
+            console.error('Error cargando ubicaciones:', error);
+            showNoLocationsMessage();
+        }
+    }
+
+    // CREAR UN MARCADOR PARA UNA UBICACIÓN
+    function createMarker(location) {
+        // ICONO PERSONALIZADO SEGÚN ESTADO
+        const iconUrl = location.active ?
+            'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png' :
+            'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png';
+
+        const customIcon = L.icon({
+            iconUrl: iconUrl,
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        // CREAR MARCADOR
+        const marker = L.marker([location.latitude, location.longitude], {
+            icon: customIcon,
+            title: location.name
+        }).addTo(map);
+
+        // CONTENIDO DEL POPUP
+        const popupContent = `
+            <div>
+                <h6 style="margin-bottom: 8px;">${location.name}</h6>
+                ${location.description ? `<p style="margin-bottom: 8px; color: #666; font-size: 14px;">${location.description}</p>` : ''}
+                ${location.address ? `<p style="margin-bottom: 8px; font-size: 14px;"><i class="bi bi-house"></i> ${location.address}</p>` : ''}
+                <p style="margin-bottom: 8px; font-size: 12px;">
+                    <i class="bi bi-compass"></i>
+                    ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}
+                </p>
+                <span style="background: ${location.active ? '#28a745' : '#ffc107'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">
+                    ${location.active ? 'Activa' : 'Inactiva'}
+                </span>
+            </div>
+        `;
+
+        // AGREGAR POPUP AL MARCADOR
+        marker.bindPopup(popupContent);
+
+        markers.push(marker);
+    }
+
+    // AJUSTAR EL MAPA PARA MOSTRAR TODOS LOS MARCADORES
+    function fitMapToMarkers() {
+        if (markers.length === 0) return;
+
+        const group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+
+        // SI SOLO HAY UN MARCADOR, ESTABLECER ZOOM FIJO
+        if (markers.length === 1) {
+            map.setZoom(15);
+        }
+    }
+
+    // MOSTRAR MENSAJE CUANDO NO HAY UBICACIONES
+    function showNoLocationsMessage() {
+        const popup = L.popup()
+            .setLatLng([40.4168, -3.7038])
+            .setContent('<div><h6>¡Mapa listo!</h6><p>Crea ubicaciones para verlas aquí.</p></div>')
+            .openOn(map);
+    }
+
+    // MOSTRAR UNA UBICACIÓN ESPECÍFICA EN EL MAPA
+    function showLocationOnMap(lat, lng, name) {
+        map.setView([lat, lng], 15);
+
+        // BUSCAR EL MARCADOR CORRESPONDIENTE Y ABRIR SU POPUP
+        const marker = markers.find(m =>
+            Math.abs(m.getLatLng().lat - lat) < 0.000001 &&
+            Math.abs(m.getLatLng().lng - lng) < 0.000001
+        );
+
+        if (marker) {
+            marker.openPopup();
+        }
+    }
+
+    // EVENTOS DOM
+    document.addEventListener('DOMContentLoaded', function() {
+        // INICIALIZAR MAPA
+        initMap();
+
+        // BOTONES "VER EN MAPA"
+        document.querySelectorAll('.show-on-map').forEach(button => {
+            button.addEventListener('click', function() {
+                const lat = parseFloat(this.dataset.lat);
+                const lng = parseFloat(this.dataset.lng);
+                const name = this.dataset.name;
+
+                showLocationOnMap(lat, lng, name);
+
+                // SCROLL SUAVE AL MAPA
+                document.getElementById('map').scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    });
+</script>
+</body>
+</html>

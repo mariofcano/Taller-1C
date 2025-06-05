@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Ubicación - Task Manager</title>
+    <!-- BOOTSTRAP PARA EL DISEÑO -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- ICONOS DE BOOTSTRAP -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- MI CSS PERSONALIZADO -->
+    <link th:href="@{/css/public-styles.css}" rel="stylesheet">
+</head>
+<body>
+<!-- BARRA DE NAVEGACIÓN -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="bi bi-check-circle-fill me-2"></i>Task Manager
+        </a>
+
+        <!-- BOTÓN PARA MÓVILES -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- MENÚ DE NAVEGACIÓN -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tasks">Mis Tareas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users/catalog">Usuarios</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/maps">Maps</a>
+                </li>
+            </ul>
+
+            <!-- MENÚ DE USUARIO -->
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                        <span th:text="${currentUser.username}">Usuario</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/logout">Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="container mt-4">
+
+    <!-- BREADCRUMB -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/maps">Maps</a></li>
+            <li class="breadcrumb-item active">Nueva Ubicación</li>
+        </ol>
+    </nav>
+
+    <!-- ENCABEZADO -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">
+                <i class="bi bi-geo-alt-fill text-success"></i>
+                Crear Nueva Ubicación
+            </h1>
+            <p class="text-muted">Selecciona un punto en el mapa o introduce las coordenadas manualmente.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/maps" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a Maps
+            </a>
+        </div>
+    </div>
+
+    <!-- MAPA INTERACTIVO PARA SELECCIONAR UBICACIÓN -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-cursor-fill"></i>
+                        Selecciona la Ubicación en el Mapa
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <!-- CONTENEDOR DEL MAPA INTERACTIVO -->
+                    <div id="map" style="height: 350px; width: 100%;"></div>
+                </div>
+                <div class="card-footer text-muted small">
+                    <i class="bi bi-info-circle"></i>
+                    Haz clic en cualquier punto del mapa para seleccionar la ubicación. Las coordenadas se completarán automáticamente.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORMULARIO DE CREACIÓN -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-file-earmark-plus"></i>
+                        Datos de la Nueva Ubicación
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    <!-- FORMULARIO -->
+                    <form action="/maps/create" method="post" novalidate>
+
+                        <!-- CAMPO NOMBRE -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold">
+                                <i class="bi bi-card-text text-primary"></i>
+                                Nombre de la Ubicación *
+                            </label>
+                            <input type="text"
+                                   class="form-control form-control-lg"
+                                   id="name"
+                                   name="name"
+                                   placeholder="Ej: Casa, Oficina, Universidad..."
+                                   required
+                                   maxlength="100">
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Nombre descriptivo para identificar fácilmente la ubicación
+                            </div>
+                        </div>
+
+                        <!-- CAMPO DESCRIPCIÓN -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label fw-bold">
+                                <i class="bi bi-card-list text-primary"></i>
+                                Descripción
+                            </label>
+                            <textarea class="form-control"
+                                      id="description"
+                                      name="description"
+                                      rows="3"
+                                      placeholder="Describe la ubicación o su propósito..."
+                                      maxlength="500"></textarea>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Información adicional sobre la ubicación (opcional)
+                            </div>
+                        </div>
+
+                        <!-- COORDENADAS GPS -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="latitude" class="form-label fw-bold">
+                                    <i class="bi bi-compass text-primary"></i>
+                                    Latitud *
+                                </label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="latitude"
+                                       name="latitude"
+                                       step="any"
+                                       placeholder="40.416775"
+                                       required
+                                       readonly>
+                                <div class="form-text">
+                                    Coordenada Y (Norte-Sur)
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="longitude" class="form-label fw-bold">
+                                    <i class="bi bi-compass text-primary"></i>
+                                    Longitud *
+                                </label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="longitude"
+                                       name="longitude"
+                                       step="any"
+                                       placeholder="-3.703790"
+                                       required
+                                       readonly>
+                                <div class="form-text">
+                                    Coordenada X (Este-Oeste)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DIRECCIÓN FÍSICA -->
+                        <div class="mb-4">
+                            <label for="address" class="form-label fw-bold">
+                                <i class="bi bi-house text-primary"></i>
+                                Dirección Física
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="address"
+                                   name="address"
+                                   placeholder="Ej: Calle Mayor 123, Madrid, España"
+                                   maxlength="200">
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Dirección postal o referencia física (opcional)
+                            </div>
+                        </div>
+
+                        <!-- INFORMACIÓN ADICIONAL -->
+                        <div class="alert alert-info d-flex align-items-center" role="alert">
+                            <i class="bi bi-lightbulb-fill me-2"></i>
+                            <div>
+                                <strong>Tip:</strong> Las nuevas ubicaciones se crean como "activas" por defecto.
+                                Puedes cambiar su estado desde la lista de ubicaciones.
+                            </div>
+                        </div>
+
+                        <!-- BOTONES -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/maps" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-x-circle"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                Crear Ubicación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONSEJOS ADICIONALES -->
+    <div class="row mt-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-question-circle text-info"></i>
+                        Consejos para crear ubicaciones
+                    </h6>
+                    <ul class="mb-0">
+                        <li>Usa nombres descriptivos y fáciles de recordar</li>
+                        <li>Haz clic directamente en el mapa para mayor precisión</li>
+                        <li>Incluye referencias físicas en la descripción</li>
+                        <li>Verifica que las coordenadas sean correctas antes de guardar</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPTS DE BOOTSTRAP -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- GOOGLE MAPS API -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBfUb_VQkqDF5KyApJyrvDPgU12_SSj49Y&callback=initMap"></script>
+
+<!-- SCRIPT PERSONALIZADO PARA EL MAPA INTERACTIVO -->
+<script>
+    let map;
+    let marker;
+    let geocoder;
+
+    // INICIALIZO EL MAPA INTERACTIVO
+    function initMap() {
+        // CENTRO INICIAL DEL MAPA (MADRID, ESPAÑA)
+        const defaultCenter = { lat: 40.4168, lng: -3.7038 };
+
+        // CREO EL MAPA CON CONFIGURACIÓN INTERACTIVA
+        map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 10,
+            center: defaultCenter,
+            mapTypeId: 'roadmap',
+            clickableIcons: true
+        });
+
+        // INICIALIZO EL GEOCODER PARA CONVERTIR COORDENADAS A DIRECCIONES
+        geocoder = new google.maps.Geocoder();
+
+        // CONFIGURO EL EVENTO DE CLICK EN EL MAPA
+        map.addListener('click', function(event) {
+            placeMarkerAndSetCoordinates(event.latLng);
+        });
+
+        // INTENTO OBTENER LA UBICACIÓN ACTUAL DEL USUARIO
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    // CENTRO EL MAPA EN LA UBICACIÓN DEL USUARIO
+                    map.setCenter(userLocation);
+                    map.setZoom(15);
+
+                    // COLOCO UN MARCADOR INICIAL
+                    placeMarkerAndSetCoordinates(userLocation);
+                },
+                function() {
+                    // SI NO SE PUEDE OBTENER LA UBICACIÓN, USO MADRID POR DEFECTO
+                    console.log('No se pudo obtener la ubicación del usuario');
+                }
+            );
+        }
+    }
+
+    // COLOCO UN MARCADOR Y ACTUALIZO LAS COORDENADAS
+    function placeMarkerAndSetCoordinates(location) {
+        // ELIMINO EL MARCADOR ANTERIOR SI EXISTE
+        if (marker) {
+            marker.setMap(null);
+        }
+
+        // CREO UN NUEVO MARCADOR
+        marker = new google.maps.Marker({
+            position: location,
+            map: map,
+            title: 'Ubicación seleccionada',
+            draggable: true,
+            icon: {
+                url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+                scaledSize: new google.maps.Size(32, 32)
+            }
+        });
+
+        // ACTUALIZO LOS CAMPOS DEL FORMULARIO
+        updateCoordinateFields(location.lat, location.lng);
+
+        // INTENTO OBTENER LA DIRECCIÓN DE LAS COORDENADAS
+        reverseGeocode(location);
+
+        // CONFIGURO EL EVENTO DE ARRASTRE DEL MARCADOR
+        marker.addListener('dragend', function(event) {
+            const newLocation = event.latLng;
+            updateCoordinateFields(newLocation.lat(), newLocation.lng());
+            reverseGeocode(newLocation);
+        });
+    }
+
+    // ACTUALIZO LOS CAMPOS DE COORDENADAS EN EL FORMULARIO
+    function updateCoordinateFields(lat, lng) {
+        document.getElementById('latitude').value = lat.toFixed(6);
+        document.getElementById('longitude').value = lng.toFixed(6);
+
+        // MARCO LOS CAMPOS COMO VÁLIDOS
+        document.getElementById('latitude').classList.add('is-valid');
+        document.getElementById('longitude').classList.add('is-valid');
+    }
+
+    // CONVIERTO COORDENADAS A DIRECCIÓN USANDO GEOCODING
+    function reverseGeocode(location) {
+        geocoder.geocode({ 'location': location }, function(results, status) {
+            if (status === 'OK') {
+                if (results[0]) {
+                    // ACTUALIZO EL CAMPO DE DIRECCIÓN AUTOMÁTICAMENTE
+                    const addressField = document.getElementById('address');
+                    if (!addressField.value) { // SOLO SI ESTÁ VACÍO
+                        addressField.value = results[0].formatted_address;
+                        addressField.classList.add('is-valid');
+                    }
+                }
+            } else {
+                console.log('Geocoder falló debido a: ' + status);
+            }
+        });
+    }
+
+    // EVENTOS DOM Y VALIDACIONES
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const nameInput = document.getElementById('name');
+        const descriptionInput = document.getElementById('description');
+        const latitudeInput = document.getElementById('latitude');
+        const longitudeInput = document.getElementById('longitude');
+
+        // VALIDACIÓN EN TIEMPO REAL DEL NOMBRE
+        nameInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            if (value.length < 3) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        // CONTADORES DE CARACTERES
+        const nameCounter = document.createElement('div');
+        nameCounter.className = 'form-text text-end';
+        nameInput.parentNode.appendChild(nameCounter);
+
+        const descCounter = document.createElement('div');
+        descCounter.className = 'form-text text-end';
+        descriptionInput.parentNode.appendChild(descCounter);
+
+        function updateCounters() {
+            nameCounter.textContent = `${nameInput.value.length}/100 caracteres`;
+            descCounter.textContent = `${descriptionInput.value.length}/500 caracteres`;
+        }
+
+        nameInput.addEventListener('input', updateCounters);
+        descriptionInput.addEventListener('input', updateCounters);
+        updateCounters();
+
+        // VALIDACIÓN AL ENVIAR EL FORMULARIO
+        form.addEventListener('submit', function(e) {
+            const name = nameInput.value.trim();
+            const latitude = parseFloat(latitudeInput.value);
+            const longitude = parseFloat(longitudeInput.value);
+
+            // VALIDACIONES BÁSICAS
+            if (name.length < 3) {
+                e.preventDefault();
+                nameInput.focus();
+                alert('El nombre debe tener al menos 3 caracteres');
+                return false;
+            }
+
+            if (!latitude || !longitude) {
+                e.preventDefault();
+                alert('Debes seleccionar una ubicación en el mapa');
+                return false;
+            }
+
+            if (latitude < -90 || latitude > 90) {
+                e.preventDefault();
+                alert('La latitud debe estar entre -90 y 90');
+                return false;
+            }
+
+            if (longitude < -180 || longitude > 180) {
+                e.preventDefault();
+                alert('La longitud debe estar entre -180 y 180');
+                return false;
+            }
+
+            // MOSTRAR LOADING
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando...';
+            submitBtn.disabled = true;
+        });
+
+        // PERMITIR EDICIÓN MANUAL DE COORDENADAS
+        latitudeInput.addEventListener('dblclick', function() {
+            this.readOnly = false;
+            this.focus();
+            this.select();
+        });
+
+        longitudeInput.addEventListener('dblclick', function() {
+            this.readOnly = false;
+            this.focus();
+            this.select();
+        });
+
+        // ACTUALIZAR MARCADOR CUANDO SE CAMBIEN COORDENADAS MANUALMENTE
+        function updateMarkerFromFields() {
+            const lat = parseFloat(latitudeInput.value);
+            const lng = parseFloat(longitudeInput.value);
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                const newLocation = { lat: lat, lng: lng };
+                placeMarkerAndSetCoordinates(newLocation);
+                map.setCenter(newLocation);
+            }
+        }
+
+        latitudeInput.addEventListener('blur', function() {
+            this.readOnly = true;
+            updateMarkerFromFields();
+        });
+
+        longitudeInput.addEventListener('blur', function() {
+            this.readOnly = true;
+            updateMarkerFromFields();
+        });
+    });
+</script>
+</body>
+</html>
