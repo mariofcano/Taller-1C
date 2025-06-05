@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- ICONOS DE BOOTSTRAP -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- LEAFLET CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- MI CSS PERSONALIZADO -->
     <link th:href="@{/css/public-styles.css}" rel="stylesheet">
 </head>
@@ -96,7 +98,7 @@
                     </h5>
                 </div>
                 <div class="card-body p-0">
-                    <!-- CONTENEDOR DEL MAPA INTERACTIVO -->
+                    <!-- CONTENEDOR DEL MAPA LEAFLET -->
                     <div id="map" style="height: 350px; width: 100%;"></div>
                 </div>
                 <div class="card-footer text-muted small">
@@ -314,13 +316,13 @@
 <!-- SCRIPTS DE BOOTSTRAP -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- GOOGLE MAPS API -->
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBfUb_VQkqDF5KyApJyrvDPgU12_SSj49Y&callback=initMap"></script>
+<!-- LEAFLET JAVASCRIPT -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <!-- SCRIPT PERSONALIZADO PARA EDICIÓN CON MAPA -->
 <script>
     let map;
     let marker;
-    let geocoder;
 
     // DATOS INICIALES DE LA UBICACIÓN DESDE THYMELEAF
     const currentLocation = {
@@ -336,79 +338,80 @@
     // INICIALIZO EL MAPA CON LA UBICACIÓN ACTUAL
     function initMap() {
         // CENTRO EL MAPA EN LA UBICACIÓN EXISTENTE
-        const locationPosition = {
-            lat: currentLocation.latitude,
-            lng: currentLocation.longitude
-        };
+        const locationPosition = [currentLocation.latitude, currentLocation.longitude];
 
         // CREO EL MAPA CENTRADO EN LA UBICACIÓN
-        map = new google.maps.Map(document.getElementById('map'), {
-            zoom: 15,
-            center: locationPosition,
-            mapTypeId: 'roadmap'
-        });
+        map = L.map('map').setView(locationPosition, 13);
 
-        // INICIALIZO EL GEOCODER
-        geocoder = new google.maps.Geocoder();
+        // AGREGAR CAPA DE MAPA OPENSTREETMAP
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
         // COLOCO EL MARCADOR EN LA POSICIÓN ACTUAL
         placeMarkerAndSetCoordinates(locationPosition);
 
         // CONFIGURO EL EVENTO DE CLICK EN EL MAPA
-        map.addListener('click', function(event) {
-            placeMarkerAndSetCoordinates(event.latLng);
+        map.on('click', function(e) {
+            placeMarkerAndSetCoordinates([e.latlng.lat, e.latlng.lng]);
         });
     }
 
     // COLOCO EL MARCADOR Y ACTUALIZO COORDENADAS
-    function placeMarkerAndSetCoordinates(location) {
+    function placeMarkerAndSetCoordinates(latlng) {
         // ELIMINO EL MARCADOR ANTERIOR SI EXISTE
         if (marker) {
-            marker.setMap(null);
+            map.removeLayer(marker);
         }
 
-        // CREO EL MARCADOR CON ICONO ESPECIAL PARA EDICIÓN
-        marker = new google.maps.Marker({
-            position: location,
-            map: map,
-            title: currentLocation.name,
-            draggable: true,
-            icon: {
-                url: 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
-                scaledSize: new google.maps.Size(32, 32)
-            }
+        // ICONO ESPECIAL PARA EDICIÓN (AMARILLO)
+        const yellowIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
         });
 
+        // CREO EL MARCADOR CON ICONO ESPECIAL PARA EDICIÓN
+        marker = L.marker(latlng, {
+            icon: yellowIcon,
+            draggable: true,
+            title: currentLocation.name
+        }).addTo(map);
+
         // ACTUALIZO LOS CAMPOS DEL FORMULARIO
-        updateCoordinateFields(location.lat, location.lng);
+        const lat = Array.isArray(latlng) ? latlng[0] : latlng.lat;
+        const lng = Array.isArray(latlng) ? latlng[1] : latlng.lng;
+        updateCoordinateFields(lat, lng);
 
         // OBTENGO LA DIRECCIÓN DE LAS NUEVAS COORDENADAS
-        reverseGeocode(location);
+        reverseGeocode(lat, lng);
 
         // CONFIGURO EL ARRASTRE DEL MARCADOR
-        marker.addListener('dragend', function(event) {
-            const newLocation = event.latLng;
-            updateCoordinateFields(newLocation.lat(), newLocation.lng());
-            reverseGeocode(newLocation);
+        marker.on('dragend', function(e) {
+            const newPos = e.target.getLatLng();
+            updateCoordinateFields(newPos.lat, newPos.lng);
+            reverseGeocode(newPos.lat, newPos.lng);
         });
 
         // VENTANA DE INFORMACIÓN DEL MARCADOR
-        const infoContent = `
-            <div class="p-2">
-                <h6 class="mb-1">${currentLocation.name}</h6>
-                <p class="mb-1 text-muted small">Arrastra para cambiar posición</p>
-                <span class="badge ${currentLocation.active ? 'bg-success' : 'bg-warning'}">
+        const popupContent = `
+            <div style="text-align: center;">
+                <h6 style="margin-bottom: 8px;">${currentLocation.name}</h6>
+                <p style="margin-bottom: 8px; color: #666; font-size: 14px;">Arrastra para cambiar posición</p>
+                <span style="background: ${currentLocation.active ? '#28a745' : '#ffc107'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">
                     ${currentLocation.active ? 'Activa' : 'Inactiva'}
                 </span>
             </div>
         `;
 
-        const infoWindow = new google.maps.InfoWindow({
-            content: infoContent
-        });
+        marker.bindPopup(popupContent);
 
-        marker.addListener('click', function() {
-            infoWindow.open(map, marker);
+        // ABRIR POPUP AL HACER CLICK
+        marker.on('click', function() {
+            marker.openPopup();
         });
     }
 
@@ -423,32 +426,37 @@
     }
 
     // GEOCODING INVERSO PARA OBTENER DIRECCIÓN
-    function reverseGeocode(location) {
-        geocoder.geocode({ 'location': location }, function(results, status) {
-            if (status === 'OK') {
-                if (results[0]) {
-                    // SUGIERO LA NUEVA DIRECCIÓN SI LA COORDENADA CAMBIÓ MUCHO
-                    const addressField = document.getElementById('address');
-                    const newAddress = results[0].formatted_address;
+    async function reverseGeocode(lat, lng) {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+            );
+            const data = await response.json();
 
-                    // CALCULO LA DISTANCIA DEL CAMBIO
-                    const originalLat = currentLocation.latitude;
-                    const originalLng = currentLocation.longitude;
-                    const currentLat = location.lat;
-                    const currentLng = location.lng;
+            if (data && data.display_name) {
+                // SUGIERO LA NUEVA DIRECCIÓN SI LA COORDENADA CAMBIÓ MUCHO
+                const addressField = document.getElementById('address');
+                const newAddress = data.display_name;
 
-                    const distance = calculateDistance(originalLat, originalLng, currentLat, currentLng);
+                // CALCULO LA DISTANCIA DEL CAMBIO
+                const originalLat = currentLocation.latitude;
+                const originalLng = currentLocation.longitude;
+                const currentLat = lat;
+                const currentLng = lng;
 
-                    // SI SE MOVIÓ MÁS DE 100 METROS, SUGIERO NUEVA DIRECCIÓN
-                    if (distance > 0.1) {
-                        if (confirm('¿Quieres actualizar la dirección con la nueva ubicación?\n\n' + newAddress)) {
-                            addressField.value = newAddress;
-                            addressField.classList.add('is-valid');
-                        }
+                const distance = calculateDistance(originalLat, originalLng, currentLat, currentLng);
+
+                // SI SE MOVIÓ MÁS DE 100 METROS, SUGIERO NUEVA DIRECCIÓN
+                if (distance > 0.1) {
+                    if (confirm('¿Quieres actualizar la dirección con la nueva ubicación?\n\n' + newAddress)) {
+                        addressField.value = newAddress;
+                        addressField.classList.add('is-valid');
                     }
                 }
             }
-        });
+        } catch (error) {
+            console.log('Error en geocoding:', error);
+        }
     }
 
     // CALCULO DISTANCIA ENTRE DOS PUNTOS GPS
@@ -465,6 +473,9 @@
 
     // EVENTOS DOM Y FUNCIONALIDAD INTERACTIVA
     document.addEventListener('DOMContentLoaded', function() {
+        // INICIALIZAR MAPA
+        initMap();
+
         const form = document.querySelector('form');
         const nameInput = document.getElementById('name');
         const descriptionInput = document.getElementById('description');
@@ -545,9 +556,8 @@
             const lng = parseFloat(longitudeInput.value);
 
             if (!isNaN(lat) && !isNaN(lng)) {
-                const newLocation = { lat: lat, lng: lng };
-                placeMarkerAndSetCoordinates(newLocation);
-                map.setCenter(newLocation);
+                placeMarkerAndSetCoordinates([lat, lng]);
+                map.setView([lat, lng], 13);
             }
         }
 
