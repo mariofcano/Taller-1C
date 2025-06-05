@@ -56,6 +56,16 @@ public class TaskService {
      * @return la tarea creada
      */
     public Task createTask(String title, String description, User user) {
+        // Valido que el título no sea null ni esté vacío
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("El título de la tarea no puede estar vacío");
+        }
+
+        // Valido que el usuario no sea null
+        if (user == null) {
+            throw new IllegalArgumentException("El usuario propietario es obligatorio");
+        }
+
         Task task = new Task(title, description, user);
         return taskRepository.save(task);
     }
